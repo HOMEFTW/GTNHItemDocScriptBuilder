@@ -131,6 +131,14 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertEqual("gt.recipe.assembler", recipe_map_id_from_label(label))
         self.assertIn("大型化学反应釜 (gt.recipe.largechemicalreactor)", recipe_map_label_options())
 
+    def test_recipe_map_labels_follow_gregtech_lang_names(self):
+        self.assertEqual("两极磁化机", recipe_map_label("gt.recipe.polarizer").split(" (", 1)[0])
+        self.assertEqual("流体固化器", recipe_map_label("gt.recipe.fluidsolidifier").split(" (", 1)[0])
+        self.assertEqual("板材切割机", recipe_map_label("gt.recipe.cuttingsaw").split(" (", 1)[0])
+        self.assertEqual("石油裂化机", recipe_map_label("gt.recipe.craker").split(" (", 1)[0])
+        self.assertEqual("鸿蒙之眼", recipe_map_label("gt.recipe.eyeofharmony").split(" (", 1)[0])
+        self.assertEqual("电动聚爆压缩机", recipe_map_label("gt.recipe.electricimplosioncompressor").split(" (", 1)[0])
+
 
 if __name__ == "__main__":
     unittest.main()
