@@ -1,0 +1,33 @@
+# GTNHItemDocScriptBuilder
+
+Tkinter 桌面工具，用 `GTNHItemDocExporter` 导出的 `item_index.json` 生成 CraftTweaker / ModTweaker `.zs` 脚本。
+
+## 运行
+
+```powershell
+python main.py
+```
+
+## 输入
+
+选择导出的物品索引，例如：
+
+```text
+D:\Code\gtnh_item_doc_exporter\item_index.json
+```
+
+## 支持脚本
+
+- 有序合成
+- 无序合成
+- 熔炉配方
+- 删除配方
+- GTNH / 模组机器模板配方
+
+机器模板第一版支持 16 个物品输入、4 个物品输出、流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；Generic GT 模板会带校准注释，便于后续按实际 GTNH handler 调整。
+
+## 打包
+
+```powershell
+.\build.bat
+```
