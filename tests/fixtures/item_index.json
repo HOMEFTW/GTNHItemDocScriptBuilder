@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-02T21:46:40+0800",
+  "minecraftVersion": "1.7.10",
+  "language": "zh_CN",
+  "entryCount": 3,
+  "entries": [
+    {
+      "modId": "minecraft",
+      "registryId": "minecraft:iron_ingot",
+      "meta": 0,
+      "ctExpression": "<minecraft:iron_ingot>",
+      "chineseName": "铁锭",
+      "englishName": "Iron Ingot",
+      "unlocalizedName": "item.ingotIron",
+      "isBlock": false,
+      "guid": "minecraft:iron_ingot:0",
+      "nbtSummary": ""
+    },
+    {
+      "modId": "minecraft",
+      "registryId": "minecraft:glass",
+      "meta": 0,
+      "ctExpression": "<minecraft:glass>",
+      "chineseName": "玻璃",
+      "englishName": "Glass",
+      "unlocalizedName": "tile.glass",
+      "isBlock": true,
+      "guid": "minecraft:glass:0",
+      "nbtSummary": ""
+    },
+    {
+      "modId": "gregtech",
+      "registryId": "gregtech:gt.metaitem.01",
+      "meta": 32700,
+      "ctExpression": "<gregtech:gt.metaitem.01:32700>",
+      "chineseName": "集成电路",
+      "englishName": "Integrated Circuit",
+      "unlocalizedName": "item.gt.integrated_circuit",
+      "isBlock": false,
+      "guid": "gregtech:gt.metaitem.01:32700",
+      "nbtSummary": ""
+    }
+  ]
+}
