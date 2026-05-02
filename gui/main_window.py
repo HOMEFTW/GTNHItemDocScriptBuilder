@@ -6,7 +6,13 @@ from tkinter import ttk
 from core.item_index import ItemEntry, ItemIndexStore
 from core.recipe_model import RecipeDraft, ScriptItem
 from core.script_project import AppConfig, save_script
-from core.templates import TEMPLATES, recipe_map_options, template_options
+from core.templates import (
+    TEMPLATES,
+    recipe_map_id_from_label,
+    recipe_map_label,
+    recipe_map_label_options,
+    template_options,
+)
 from core.zs_generator import ZsGenerator
 from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
 from gui.widgets import FluidListFrame, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
@@ -28,7 +34,8 @@ class MainWindow:
         self.selected_slot: SlotButton | None = None
         self.recipe_kind = tk.StringVar(value="shaped")
         self.template_id = tk.StringVar(value=self.config.last_template)
-        self.recipe_map = tk.StringVar(value=self.config.last_recipe_map or self._default_recipe_map(self.config.last_template))
+        initial_recipe_map = self.config.last_recipe_map or self._default_recipe_map(self.config.last_template)
+        self.recipe_map = tk.StringVar(value=recipe_map_label(recipe_map_id_from_label(initial_recipe_map)))
         self.xp_var = tk.StringVar(value="0.0")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
@@ -120,9 +127,9 @@ class MainWindow:
         map_combo = ttk.Combobox(
             params,
             textvariable=self.recipe_map,
-            values=recipe_map_options(),
+            values=recipe_map_label_options(),
             state="readonly",
-            width=32,
+            width=42,
         )
         map_combo.grid(row=1, column=1, sticky=tk.W, pady=2)
         map_combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_preview())
@@ -177,7 +184,7 @@ class MainWindow:
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
     def _on_template_selected(self):
-        self.recipe_map.set(self._default_recipe_map(self.template_id.get()))
+        self.recipe_map.set(recipe_map_label(self._default_recipe_map(self.template_id.get())))
         self._refresh_preview()
 
     def _default_recipe_map(self, template_id: str) -> str:
@@ -206,7 +213,7 @@ class MainWindow:
             xp=float(self.xp_var.get() or "0"),
             remove_mode=self.remove_mode.get(),
             template_id=self.template_id.get(),
-            recipe_map=self.recipe_map.get(),
+            recipe_map=recipe_map_id_from_label(self.recipe_map.get()),
         )
 
     def _refresh_preview(self):
@@ -243,6 +250,6 @@ class MainWindow:
     def _on_close(self):
         self.config.window_geometry = self.root.geometry()
         self.config.last_template = self.template_id.get()
-        self.config.last_recipe_map = self.recipe_map.get()
+        self.config.last_recipe_map = recipe_map_id_from_label(self.recipe_map.get())
         self.config.save(self.config_path)
         self.root.destroy()

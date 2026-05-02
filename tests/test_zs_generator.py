@@ -1,7 +1,7 @@
 import unittest
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
-from core.templates import RECIPE_MAPS
+from core.templates import RECIPE_MAPS, recipe_map_id_from_label, recipe_map_label, recipe_map_label_options
 from core.zs_generator import ZsGenerator
 
 
@@ -124,6 +124,12 @@ class ZsGeneratorTest(unittest.TestCase):
         )
         script = self.generator.generate(draft)
         self.assertIn('.addTo("gt.recipe.largechemicalreactor");', script)
+
+    def test_recipe_map_labels_show_chinese_and_original_id(self):
+        label = recipe_map_label("gt.recipe.assembler")
+        self.assertEqual("组装机 (gt.recipe.assembler)", label)
+        self.assertEqual("gt.recipe.assembler", recipe_map_id_from_label(label))
+        self.assertIn("大型化学反应釜 (gt.recipe.largechemicalreactor)", recipe_map_label_options())
 
 
 if __name__ == "__main__":
