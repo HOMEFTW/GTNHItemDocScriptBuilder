@@ -6,7 +6,7 @@ from tkinter import ttk
 from core.item_index import ItemEntry, ItemIndexStore
 from core.recipe_model import RecipeDraft, ScriptItem
 from core.script_project import AppConfig, save_script
-from core.templates import template_options
+from core.templates import TEMPLATES, recipe_map_options, template_options
 from core.zs_generator import ZsGenerator
 from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
 from gui.widgets import FluidListFrame, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
@@ -28,6 +28,7 @@ class MainWindow:
         self.selected_slot: SlotButton | None = None
         self.recipe_kind = tk.StringVar(value="shaped")
         self.template_id = tk.StringVar(value=self.config.last_template)
+        self.recipe_map = tk.StringVar(value=self.config.last_recipe_map or self._default_recipe_map(self.config.last_template))
         self.xp_var = tk.StringVar(value="0.0")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
@@ -113,22 +114,33 @@ class MainWindow:
             width=28,
         )
         combo.grid(row=0, column=1, sticky=tk.W, pady=2)
-        combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_preview())
+        combo.bind("<<ComboboxSelected>>", lambda _event: self._on_template_selected())
 
-        ttk.Label(params, text="XP:").grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.xp_var, width=10).grid(row=1, column=1, sticky=tk.W, pady=2)
-        ttk.Label(params, text="Duration:").grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=2)
-        ttk.Label(params, text="EU/t:").grid(row=3, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
-        ttk.Label(params, text="删除模式:").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Label(params, text="Recipe Map:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        map_combo = ttk.Combobox(
+            params,
+            textvariable=self.recipe_map,
+            values=recipe_map_options(),
+            state="readonly",
+            width=32,
+        )
+        map_combo.grid(row=1, column=1, sticky=tk.W, pady=2)
+        map_combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_preview())
+
+        ttk.Label(params, text="XP:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(params, textvariable=self.xp_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=2)
+        ttk.Label(params, text="Duration:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
+        ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
+        ttk.Label(params, text="删除模式:").grid(row=5, column=0, sticky=tk.W, pady=2)
         ttk.Combobox(
             params,
             textvariable=self.remove_mode,
             values=["all", "shaped", "shapeless", "furnace", "machine"],
             state="readonly",
             width=12,
-        ).grid(row=4, column=1, sticky=tk.W, pady=2)
+        ).grid(row=5, column=1, sticky=tk.W, pady=2)
 
         self.fluid_inputs = FluidListFrame(parent, "流体输入")
         self.fluid_inputs.pack(fill=tk.X, pady=4)
@@ -164,6 +176,16 @@ class MainWindow:
         self.selected_slot = slot
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
+    def _on_template_selected(self):
+        self.recipe_map.set(self._default_recipe_map(self.template_id.get()))
+        self._refresh_preview()
+
+    def _default_recipe_map(self, template_id: str) -> str:
+        template = TEMPLATES.get(template_id)
+        if template is None:
+            return "gt.recipe.assembler"
+        return template.recipe_map or "gt.recipe.assembler"
+
     def _pick_item(self, entry: ItemEntry):
         if self.selected_slot is None:
             self.status_var.set("请先点击一个配方格")
@@ -184,6 +206,7 @@ class MainWindow:
             xp=float(self.xp_var.get() or "0"),
             remove_mode=self.remove_mode.get(),
             template_id=self.template_id.get(),
+            recipe_map=self.recipe_map.get(),
         )
 
     def _refresh_preview(self):
@@ -220,5 +243,6 @@ class MainWindow:
     def _on_close(self):
         self.config.window_geometry = self.root.geometry()
         self.config.last_template = self.template_id.get()
+        self.config.last_recipe_map = self.recipe_map.get()
         self.config.save(self.config_path)
         self.root.destroy()

@@ -26,6 +26,8 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 
 机器模板第一版支持 16 个物品输入、4 个物品输出、流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
 
+GTNH/模组机器模式下，“模板”下方有 `Recipe Map` 下拉框。列表来自 Wiki 的 `Available recipe maps`，选择后会覆盖模板默认 recipe map。
+
 ```zenscript
 mods.gregtech.RA2
     .builder()

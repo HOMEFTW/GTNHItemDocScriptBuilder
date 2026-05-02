@@ -42,3 +42,4 @@ class RecipeDraft:
     xp: float = 0.0
     remove_mode: str = "all"
     template_id: str = "generic_gt_machine"
+    recipe_map: str = ""

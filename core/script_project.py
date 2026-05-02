@@ -12,6 +12,7 @@ class AppConfig:
     script_output_dir: str = ""
     window_geometry: str = "1200x820"
     last_template: str = "generic_gt_machine"
+    last_recipe_map: str = "gt.recipe.assembler"
 
     @classmethod
     def load(cls, path: str | Path) -> "AppConfig":
@@ -25,6 +26,7 @@ class AppConfig:
             script_output_dir=str(data.get("script_output_dir", "")),
             window_geometry=str(data.get("window_geometry", "1200x820")),
             last_template=str(data.get("last_template", "generic_gt_machine")),
+            last_recipe_map=str(data.get("last_recipe_map", "gt.recipe.assembler")),
         )
 
     def save(self, path: str | Path) -> None:

@@ -1,6 +1,7 @@
 import unittest
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
+from core.templates import RECIPE_MAPS
 from core.zs_generator import ZsGenerator
 
 
@@ -104,6 +105,25 @@ class ZsGeneratorTest(unittest.TestCase):
             'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <minecraft:slime_ball>], []);',
             self.generator.generate(draft).strip(),
         )
+
+    def test_recipe_maps_include_wiki_values(self):
+        self.assertIn("gt.recipe.assembler", RECIPE_MAPS)
+        self.assertIn("gt.recipe.largechemicalreactor", RECIPE_MAPS)
+        self.assertIn("gtpp.recipe.componentassembler", RECIPE_MAPS)
+        self.assertIn("gg.recipe.precise_assembler", RECIPE_MAPS)
+
+    def test_selected_recipe_map_overrides_template_default(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            recipe_map="gt.recipe.largechemicalreactor",
+            item_inputs=[self.item("<minecraft:iron_ingot>")],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+        self.assertIn('.addTo("gt.recipe.largechemicalreactor");', script)
 
 
 if __name__ == "__main__":

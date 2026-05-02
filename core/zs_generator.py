@@ -40,6 +40,8 @@ class ZsGenerator:
         return f"furnace.addRecipe({output.to_zs()}, {input_item.to_zs()}, {float(draft.xp):.1f});"
 
     def _remove(self, draft: RecipeDraft) -> str:
+        if draft.remove_mode == "machine":
+            return self._machine_remove(draft)
         output = self._first_required_item(draft.item_outputs, "Recipe removal needs a target output")
         if draft.remove_mode == "shaped":
             return f"recipes.removeShaped({output.to_zs()});"
@@ -50,8 +52,6 @@ class ZsGenerator:
             if inputs:
                 return f"furnace.remove({output.to_zs()}, {inputs[0].to_zs()});"
             return f"furnace.remove({output.to_zs()});"
-        if draft.remove_mode == "machine":
-            return self._machine_remove(draft)
         return f"recipes.remove({output.to_zs()});"
 
     def _machine(self, draft: RecipeDraft) -> str:
@@ -109,7 +109,7 @@ class ZsGenerator:
         outputs = self._present_items(draft.item_outputs)
         if not outputs:
             raise ValueError("GTNH machine template needs at least one item output")
-        recipe_map = template.recipe_map or "gt.recipe.assembler"
+        recipe_map = self._recipe_map(draft, template)
         return (
             f"// GTNH RA2 recipe map: {recipe_map}\n"
             "mods.gregtech.RA2\n"
@@ -132,11 +132,14 @@ class ZsGenerator:
         inputs = self._present_items(draft.item_inputs)
         if not inputs and not draft.fluid_inputs:
             raise ValueError("GT recipe remover needs at least one item or fluid input")
-        recipe_map = template.recipe_map or "gt.recipe.assembler"
+        recipe_map = self._recipe_map(draft, template)
         return (
             "mods.gregtech.RecipeRemover.remove("
             f"\"{recipe_map}\", {self._item_array(inputs)}, {self._fluid_array(draft.fluid_inputs)});"
         )
+
+    def _recipe_map(self, draft: RecipeDraft, template) -> str:
+        return draft.recipe_map.strip() or template.recipe_map or "gt.recipe.assembler"
 
     def _first_required_item(self, items: Iterable[Optional[ScriptItem]], message: str) -> ScriptItem:
         for item in items:

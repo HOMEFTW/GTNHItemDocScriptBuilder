@@ -17,11 +17,12 @@ class ScriptProjectTest(unittest.TestCase):
 
     def test_app_config_round_trip(self):
         path = self.output_dir / "config.json"
-        config = AppConfig(item_index_path="index.json", script_output_dir="scripts")
+        config = AppConfig(item_index_path="index.json", script_output_dir="scripts", last_recipe_map="gt.recipe.mixer")
         config.save(path)
         loaded = AppConfig.load(path)
         self.assertEqual("index.json", loaded.item_index_path)
         self.assertEqual("scripts", loaded.script_output_dir)
+        self.assertEqual("gt.recipe.mixer", loaded.last_recipe_map)
 
     def test_save_script_creates_parent_directory(self):
         target = self.output_dir / "scripts" / "generated.zs"
