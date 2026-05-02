@@ -12,14 +12,24 @@ class MachineTemplate:
     max_fluid_inputs: int
     max_fluid_outputs: int
     style: str
+    recipe_map: str = ""
 
 
 TEMPLATES: Dict[str, MachineTemplate] = {
-    "generic_gt_machine": MachineTemplate("generic_gt_machine", "Generic GT Machine", 16, 4, 4, 4, "generic_gt"),
-    "assembler_like": MachineTemplate("assembler_like", "Assembler-like", 16, 4, 4, 4, "generic_gt"),
-    "cutter_like": MachineTemplate("cutter_like", "Cutter-like", 16, 4, 4, 4, "generic_gt"),
-    "macerator_like": MachineTemplate("macerator_like", "Macerator-like", 16, 4, 4, 4, "generic_gt"),
-    "mixer_like": MachineTemplate("mixer_like", "Mixer-like", 16, 4, 4, 4, "generic_gt"),
+    "generic_gt_machine": MachineTemplate(
+        "generic_gt_machine",
+        "Generic GT Machine",
+        16,
+        4,
+        4,
+        4,
+        "generic_gt",
+        "gt.recipe.assembler",
+    ),
+    "assembler_like": MachineTemplate("assembler_like", "Assembler-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.assembler"),
+    "cutter_like": MachineTemplate("cutter_like", "Cutter-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.cuttingsaw"),
+    "macerator_like": MachineTemplate("macerator_like", "Macerator-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.macerator"),
+    "mixer_like": MachineTemplate("mixer_like", "Mixer-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.mixer"),
     "chemical_reactor_like": MachineTemplate(
         "chemical_reactor_like",
         "Chemical Reactor-like",
@@ -28,8 +38,18 @@ TEMPLATES: Dict[str, MachineTemplate] = {
         4,
         4,
         "generic_gt",
+        "gt.recipe.chemicalreactor",
     ),
-    "blast_furnace_like": MachineTemplate("blast_furnace_like", "Blast Furnace-like", 16, 4, 4, 4, "generic_gt"),
+    "blast_furnace_like": MachineTemplate(
+        "blast_furnace_like",
+        "Blast Furnace-like",
+        16,
+        4,
+        4,
+        4,
+        "generic_gt",
+        "gt.recipe.blastfurnace",
+    ),
     "thermal_expansion_furnace": MachineTemplate(
         "thermal_expansion_furnace",
         "Thermal Expansion Furnace",

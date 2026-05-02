@@ -125,7 +125,7 @@ class MainWindow:
         ttk.Combobox(
             params,
             textvariable=self.remove_mode,
-            values=["all", "shaped", "shapeless", "furnace"],
+            values=["all", "shaped", "shapeless", "furnace", "machine"],
             state="readonly",
             width=12,
         ).grid(row=4, column=1, sticky=tk.W, pady=2)

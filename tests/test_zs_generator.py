@@ -74,7 +74,7 @@ class ZsGeneratorTest(unittest.TestCase):
     def test_generates_generic_gt_machine_recipe(self):
         draft = RecipeDraft(
             kind="machine",
-            template_id="generic_gt_machine",
+            template_id="assembler_like",
             item_inputs=[self.item("<minecraft:iron_ingot>")],
             item_outputs=[self.item("<minecraft:bucket>")],
             fluid_inputs=[ScriptFluid("water", 1000)],
@@ -83,10 +83,27 @@ class ZsGeneratorTest(unittest.TestCase):
             eut=30,
         )
         script = self.generator.generate(draft)
-        self.assertIn("mods.gregtech.GenericMachine.addRecipe", script)
+        self.assertIn("mods.gregtech.RA2", script)
+        self.assertIn(".builder()", script)
+        self.assertIn(".itemInputs([<minecraft:iron_ingot>])", script)
+        self.assertIn(".itemOutputs([<minecraft:bucket>])", script)
+        self.assertIn(".fluidInputs([<liquid:water> * 1000])", script)
+        self.assertIn('.addTo("gt.recipe.assembler");', script)
         self.assertIn("<liquid:water> * 1000", script)
-        self.assertIn("200", script)
-        self.assertIn("30", script)
+        self.assertIn(".duration(200)", script)
+        self.assertIn(".eut(30)", script)
+
+    def test_generates_gt_recipe_remover(self):
+        draft = RecipeDraft(
+            kind="machine_remove",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:piston>"), self.item("<minecraft:slime_ball>")],
+            fluid_inputs=[],
+        )
+        self.assertEqual(
+            'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <minecraft:slime_ball>], []);',
+            self.generator.generate(draft).strip(),
+        )
 
 
 if __name__ == "__main__":

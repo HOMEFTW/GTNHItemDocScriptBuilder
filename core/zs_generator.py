@@ -17,6 +17,8 @@ class ZsGenerator:
             return self._remove(draft)
         if draft.kind == "machine":
             return self._machine(draft)
+        if draft.kind == "machine_remove":
+            return self._machine_remove(draft)
         raise ValueError(f"Unknown recipe kind: {draft.kind}")
 
     def _shaped(self, draft: RecipeDraft) -> str:
@@ -48,6 +50,8 @@ class ZsGenerator:
             if inputs:
                 return f"furnace.remove({output.to_zs()}, {inputs[0].to_zs()});"
             return f"furnace.remove({output.to_zs()});"
+        if draft.remove_mode == "machine":
+            return self._machine_remove(draft)
         return f"recipes.remove({output.to_zs()});"
 
     def _machine(self, draft: RecipeDraft) -> str:
@@ -101,20 +105,37 @@ class ZsGenerator:
         return f"mods.appeng.Inscriber.addRecipe({center}, {top}, {bottom}, {output.to_zs()}, \"Inscriber\");"
 
     def _generic_gt(self, draft: RecipeDraft) -> str:
+        template = TEMPLATES[draft.template_id]
         outputs = self._present_items(draft.item_outputs)
         if not outputs:
             raise ValueError("GTNH machine template needs at least one item output")
+        recipe_map = template.recipe_map or "gt.recipe.assembler"
         return (
-            f"// GTNH machine template: {draft.template_id}\n"
-            "// Please verify the target machine entry for your GTNH/ModTweaker environment.\n"
-            "mods.gregtech.GenericMachine.addRecipe(\n"
-            f"    {self._item_array(self._present_items(draft.item_inputs))},\n"
-            f"    {self._item_array(outputs)},\n"
-            f"    {self._fluid_array(draft.fluid_inputs)},\n"
-            f"    {self._fluid_array(draft.fluid_outputs)},\n"
-            f"    {draft.duration},\n"
-            f"    {draft.eut}\n"
-            ");"
+            f"// GTNH RA2 recipe map: {recipe_map}\n"
+            "mods.gregtech.RA2\n"
+            "    .builder()\n"
+            f"    .itemInputs({self._item_array(self._present_items(draft.item_inputs))})\n"
+            f"    .itemOutputs({self._item_array(outputs)})\n"
+            f"    .fluidInputs({self._fluid_array(draft.fluid_inputs)})\n"
+            f"    .fluidOutputs({self._fluid_array(draft.fluid_outputs)})\n"
+            f"    .duration({draft.duration})\n"
+            f"    .eut({draft.eut})\n"
+            f"    .addTo(\"{recipe_map}\");"
+        )
+
+    def _machine_remove(self, draft: RecipeDraft) -> str:
+        template = TEMPLATES.get(draft.template_id)
+        if template is None:
+            raise ValueError(f"Unknown machine template: {draft.template_id}")
+        if template.style != "generic_gt":
+            raise ValueError("Machine recipe remover is only available for GT recipe map templates")
+        inputs = self._present_items(draft.item_inputs)
+        if not inputs and not draft.fluid_inputs:
+            raise ValueError("GT recipe remover needs at least one item or fluid input")
+        recipe_map = template.recipe_map or "gt.recipe.assembler"
+        return (
+            "mods.gregtech.RecipeRemover.remove("
+            f"\"{recipe_map}\", {self._item_array(inputs)}, {self._fluid_array(draft.fluid_inputs)});"
         )
 
     def _first_required_item(self, items: Iterable[Optional[ScriptItem]], message: str) -> ScriptItem:

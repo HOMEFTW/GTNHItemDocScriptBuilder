@@ -24,7 +24,23 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - 删除配方
 - GTNH / 模组机器模板配方
 
-机器模板第一版支持 16 个物品输入、4 个物品输出、流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；Generic GT 模板会带校准注释，便于后续按实际 GTNH handler 调整。
+机器模板第一版支持 16 个物品输入、4 个物品输出、流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
+
+```zenscript
+mods.gregtech.RA2
+    .builder()
+    .itemInputs([<minecraft:dirt>])
+    .itemOutputs([<minecraft:obsidian>])
+    .duration(420)
+    .eut(100)
+    .addTo("gt.recipe.assembler");
+```
+
+删除 GT 机器配方时可在“删除模式”选择 `machine`，会生成：
+
+```zenscript
+mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <minecraft:slime_ball>], []);
+```
 
 ## 打包
 
