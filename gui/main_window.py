@@ -27,7 +27,7 @@ from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, Prev
 
 
 MIN_WINDOW_SIZE = (1400, 760)
-SEARCH_PANE_WIDTH = 320
+SEARCH_PANE_WIDTH = 580
 PREVIEW_PANE_WIDTH = 400
 SEARCH_PANE_WEIGHT = 0
 EDITOR_PANE_WEIGHT = 6

@@ -51,3 +51,4 @@
 - [x] Rework fluid rows so the amount field stays visible without making the whole window too wide.
 - [x] Rename the remove sub-option label to "删除布局" and verify its layout selector is visible.
 - [x] Keep left search and right preview panes fixed-width so the center editor keeps the usable space.
+- [x] Shift about one third of the center editor width back to the left search pane.

@@ -16,7 +16,7 @@ class MainWindowLayoutTest(unittest.TestCase):
         self.assertGreaterEqual(EDITOR_PANE_WEIGHT, 4)
         self.assertLess(SEARCH_PANE_WEIGHT, EDITOR_PANE_WEIGHT)
         self.assertLess(PREVIEW_PANE_WEIGHT, EDITOR_PANE_WEIGHT)
-        self.assertLessEqual(SEARCH_PANE_WIDTH, 340)
+        self.assertEqual(580, SEARCH_PANE_WIDTH)
         self.assertLessEqual(PREVIEW_PANE_WIDTH, 420)
 
     def test_minimum_window_is_wide_enough_for_editor_controls(self):
