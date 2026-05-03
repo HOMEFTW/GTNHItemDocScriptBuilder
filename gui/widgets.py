@@ -78,7 +78,7 @@ class ItemSearchFrame(ttk.Frame):
 
 class SlotButton(ttk.Button):
     def __init__(self, parent, label: str, on_select: Callable[["SlotButton"], None]):
-        super().__init__(parent, text=label, command=lambda: on_select(self), width=18)
+        super().__init__(parent, text=label, command=lambda: on_select(self), width=12)
         self.item: Optional[ScriptItem] = None
         self.default_label = label
 

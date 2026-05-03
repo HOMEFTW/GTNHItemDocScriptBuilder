@@ -36,7 +36,7 @@ class MainWindow:
         self.config_path = Path(__file__).resolve().parent.parent / "config.json"
         self.config = AppConfig.load(self.config_path)
         self.root.geometry(self.config.window_geometry)
-        self.root.minsize(1000, 680)
+        self.root.minsize(1400, 760)
         self.store: ItemIndexStore | None = None
         self.fluid_store: FluidIndexStore | None = None
         self.generator = ZsGenerator()
@@ -95,7 +95,7 @@ class MainWindow:
         panes.add(self.search_frame, weight=2)
 
         editor = ttk.Frame(panes)
-        panes.add(editor, weight=2)
+        panes.add(editor, weight=3)
         self._create_editor(editor)
 
         self.preview = PreviewFrame(panes)
