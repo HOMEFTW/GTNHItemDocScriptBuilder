@@ -47,3 +47,4 @@
 - [x] Add delete-mode sub options for shaped, shapeless, furnace, and GT layouts.
 - [x] Widen the center editor pane and compact slot buttons so recipe controls remain visible.
 - [x] Add a horizontal scrollbar to the left item search results table.
+- [x] Increase the default window width and make the center editor pane the primary layout area.

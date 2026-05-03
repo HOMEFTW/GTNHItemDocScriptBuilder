@@ -2,7 +2,7 @@ import shutil
 import unittest
 from pathlib import Path
 
-from core.script_project import AppConfig, normalize_window_geometry, save_script
+from core.script_project import AppConfig, DEFAULT_WINDOW_GEOMETRY, normalize_window_geometry, save_script
 
 
 class ScriptProjectTest(unittest.TestCase):
@@ -28,6 +28,19 @@ class ScriptProjectTest(unittest.TestCase):
         self.assertEqual("1500x820", normalize_window_geometry("1200x820", min_width=1500, min_height=760))
         self.assertEqual("1500x760+10+20", normalize_window_geometry("900x600+10+20", min_width=1500, min_height=760))
         self.assertEqual("1600x900", normalize_window_geometry("1600x900", min_width=1500, min_height=760))
+
+    def test_default_window_geometry_prioritizes_wide_editor(self):
+        self.assertEqual("1700x900", DEFAULT_WINDOW_GEOMETRY)
+        self.assertEqual("1700x860", normalize_window_geometry("1500x860"))
+        self.assertEqual("1700x760+10+20", normalize_window_geometry("1200x600+10+20"))
+
+    def test_saved_narrow_geometry_is_upgraded_on_load(self):
+        path = self.output_dir / "config.json"
+        AppConfig(window_geometry="1500x860").save(path)
+
+        loaded = AppConfig.load(path)
+
+        self.assertEqual("1700x860", loaded.window_geometry)
 
     def test_save_script_creates_parent_directory(self):
         target = self.output_dir / "scripts" / "generated.zs"

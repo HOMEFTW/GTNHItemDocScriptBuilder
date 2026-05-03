@@ -26,6 +26,12 @@ from gui.dialogs import choose_item_index, choose_script_file, show_error, show_
 from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
 
 
+MIN_WINDOW_SIZE = (1500, 760)
+SEARCH_PANE_WEIGHT = 1
+EDITOR_PANE_WEIGHT = 5
+PREVIEW_PANE_WEIGHT = 2
+
+
 class MainWindow:
     TITLE = "GTNH 脚本生成器"
 
@@ -36,7 +42,7 @@ class MainWindow:
         self.config_path = Path(__file__).resolve().parent.parent / "config.json"
         self.config = AppConfig.load(self.config_path)
         self.root.geometry(self.config.window_geometry)
-        self.root.minsize(1400, 760)
+        self.root.minsize(*MIN_WINDOW_SIZE)
         self.store: ItemIndexStore | None = None
         self.fluid_store: FluidIndexStore | None = None
         self.generator = ZsGenerator()
@@ -92,14 +98,14 @@ class MainWindow:
         panes.pack(fill=tk.BOTH, expand=True, pady=6)
 
         self.search_frame = ItemSearchFrame(panes, self._search, self._pick_item)
-        panes.add(self.search_frame, weight=2)
+        panes.add(self.search_frame, weight=SEARCH_PANE_WEIGHT)
 
         editor = ttk.Frame(panes)
-        panes.add(editor, weight=3)
+        panes.add(editor, weight=EDITOR_PANE_WEIGHT)
         self._create_editor(editor)
 
         self.preview = PreviewFrame(panes)
-        panes.add(self.preview, weight=2)
+        panes.add(self.preview, weight=PREVIEW_PANE_WEIGHT)
         self._refresh_preview()
 
     def _create_editor(self, parent):
