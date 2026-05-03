@@ -38,6 +38,7 @@
 
 ## Completed
 
+- [x] 给中间编辑栏增加竖向滚动条，参数和格子过多时可向下滚动查看。
 - [x] 将 GTNH/模组机器输出格从 4 格调整为 9 格，匹配 GT 输出 UI。
 - [x] 增加 RA2 `.specialItem(...)` 支持，可从当前选中的物品格复制物品、数量和后缀。
 - [x] 增加 RA2 `.specialValue(...)` 支持，GT 机器参数区可填写整数 special value。

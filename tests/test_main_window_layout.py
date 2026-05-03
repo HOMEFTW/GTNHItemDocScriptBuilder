@@ -21,6 +21,21 @@ class MainWindowLayoutTest(unittest.TestCase):
         self.assertEqual(580, SEARCH_PANE_WIDTH)
         self.assertLessEqual(PREVIEW_PANE_WIDTH, 420)
 
+    def test_editor_pane_has_vertical_scrollbar(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertEqual("vertical", str(window.editor_vertical_scrollbar.cget("orient")))
+            self.assertEqual("pack", window.editor_vertical_scrollbar.winfo_manager())
+            self.assertEqual(SEARCH_PANE_WIDTH, int(window.search_frame.cget("width")))
+            self.assertEqual(PREVIEW_PANE_WIDTH, int(window.preview.cget("width")))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
     def test_minimum_window_is_wide_enough_for_editor_controls(self):
         self.assertEqual(1400, MIN_WINDOW_SIZE[0])
         self.assertGreaterEqual(MIN_WINDOW_SIZE[1], 900)

@@ -145,7 +145,7 @@ class MainWindow:
 
         editor = ttk.Frame(panes)
         panes.add(editor, weight=EDITOR_PANE_WEIGHT)
-        self._create_editor(editor)
+        self._create_scrollable_editor(editor)
 
         self.preview = PreviewFrame(panes)
         self.preview.configure(width=PREVIEW_PANE_WIDTH)
@@ -153,6 +153,34 @@ class MainWindow:
         self.preview.grid_propagate(False)
         panes.add(self.preview, weight=PREVIEW_PANE_WEIGHT)
         self._refresh_preview()
+
+    def _create_scrollable_editor(self, parent):
+        self.editor_canvas = tk.Canvas(
+            parent,
+            borderwidth=0,
+            highlightthickness=0,
+            background="#f3f4f6",
+        )
+        self.editor_vertical_scrollbar = ttk.Scrollbar(
+            parent,
+            orient=tk.VERTICAL,
+            command=self.editor_canvas.yview,
+        )
+        self.editor_canvas.configure(yscrollcommand=self.editor_vertical_scrollbar.set)
+        self.editor_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.editor_vertical_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.editor_content = ttk.Frame(self.editor_canvas)
+        self.editor_window = self.editor_canvas.create_window((0, 0), window=self.editor_content, anchor=tk.NW)
+        self.editor_content.bind(
+            "<Configure>",
+            lambda _event: self.editor_canvas.configure(scrollregion=self.editor_canvas.bbox("all")),
+        )
+        self.editor_canvas.bind(
+            "<Configure>",
+            lambda event: self.editor_canvas.itemconfigure(self.editor_window, width=event.width),
+        )
+        self._create_editor(self.editor_content)
 
     def _create_editor(self, parent):
         mode = ttk.LabelFrame(parent, text="脚本类型", padding=5)
