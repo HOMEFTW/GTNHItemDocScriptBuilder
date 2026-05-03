@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-05-03: MineTweaker 参数按类型显示
+
+### Completed
+- 将 MineTweaker 专项参数改为按脚本类型显示。
+- 有序合成只显示“镜像有序合成”，无序合成不显示这些专项参数。
+- 熔炉只显示“写入熔炉 XP”，燃料只显示“燃烧时间”。
+- 补充 GUI 测试，锁定参数显隐行为。
+
+### Issues Encountered
+- **公共参数区误导性强**：`recipes.addShapedMirrored`、`furnace.addRecipe` XP 开关和 `furnace.setFuel` ticks 并不适用于所有类别 → 根据 `recipe_kind` 控制显隐。
+
+### Decisions Made
+- 保留参数值本身，不因切换类别清空；只控制显示，避免用户临时切换类型时丢配置。
+
+---
+
+## 2026-05-03: MineTweaker 参数左对齐
+
+### Completed
+- 将“写入熔炉 XP”、“镜像有序合成”和“燃烧时间”从参数区右侧列移动到左侧连续行。
+- 增加 GUI 布局测试，约束 MineTweaker 参数控件从第 0 列开始，避免被 `Recipe Map` 宽列推远。
+
+### Issues Encountered
+- **新控件离左侧太远**：控件放在第 2/3 列，受 `Recipe Map` 下拉框宽度影响 → 改为左侧纵向排列。
+
+### Decisions Made
+- 不改变三栏比例常量，只调整参数框内部 grid 排列。
+
+---
+
 ## 2026-05-03: MineTweaker 合成与熔炉补充
 
 ### Completed

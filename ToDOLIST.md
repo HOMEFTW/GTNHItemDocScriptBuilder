@@ -38,6 +38,8 @@
 
 ## Completed
 
+- [x] 让 MineTweaker 专项参数按脚本类型显示：镜像只在有序、XP 只在熔炉、燃烧时间只在燃料。
+- [x] 将 MineTweaker 参数区的新控件左对齐，避免“写入熔炉 XP”等选项离左边太远。
 - [x] 增加 MineTweaker GUI 和生成器支持：镜像有序合成、可选熔炉 XP、熔炉燃料脚本。
 - [x] Add `fluid_index.json` export in `GTNHItemDocExporter` from Forge `FluidRegistry`.
 - [x] Load `fluid_index.json` in the GUI and make fluid input/output rows searchable like items.

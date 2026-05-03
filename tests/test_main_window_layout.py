@@ -111,6 +111,13 @@ class MainWindowLayoutTest(unittest.TestCase):
             self.assertEqual("镜像有序合成", window.shaped_mirrored_checkbox.cget("text"))
             self.assertEqual("写入熔炉 XP", window.include_furnace_xp_checkbox.cget("text"))
             self.assertEqual("燃烧时间:", window.fuel_ticks_label_widget.cget("text"))
+            self.assertEqual(0, int(window.shaped_mirrored_checkbox.grid_info()["column"]))
+            window.recipe_kind.set("furnace")
+            window._on_recipe_kind_selected()
+            self.assertEqual(0, int(window.include_furnace_xp_checkbox.grid_info()["column"]))
+            window.recipe_kind.set("fuel")
+            window._on_recipe_kind_selected()
+            self.assertEqual(0, int(window.fuel_ticks_label_widget.grid_info()["column"]))
             window.shaped_mirrored.set(True)
             window.include_furnace_xp.set(False)
             window.fuel_ticks_var.set("1600")
@@ -119,6 +126,39 @@ class MainWindowLayoutTest(unittest.TestCase):
             self.assertTrue(draft.shaped_mirrored)
             self.assertFalse(draft.include_furnace_xp)
             self.assertEqual(1600, draft.fuel_ticks)
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_minetweaker_options_only_show_for_matching_script_type(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertTrue(window.shaped_mirrored_checkbox.grid_info())
+            self.assertFalse(window.include_furnace_xp_checkbox.grid_info())
+            self.assertFalse(window.fuel_ticks_label_widget.grid_info())
+
+            window.recipe_kind.set("shapeless")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.shaped_mirrored_checkbox.grid_info())
+            self.assertFalse(window.include_furnace_xp_checkbox.grid_info())
+            self.assertFalse(window.fuel_ticks_label_widget.grid_info())
+
+            window.recipe_kind.set("furnace")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.shaped_mirrored_checkbox.grid_info())
+            self.assertTrue(window.include_furnace_xp_checkbox.grid_info())
+            self.assertFalse(window.fuel_ticks_label_widget.grid_info())
+
+            window.recipe_kind.set("fuel")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.shaped_mirrored_checkbox.grid_info())
+            self.assertFalse(window.include_furnace_xp_checkbox.grid_info())
+            self.assertTrue(window.fuel_ticks_label_widget.grid_info())
+            self.assertTrue(window.fuel_ticks_entry.grid_info())
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():

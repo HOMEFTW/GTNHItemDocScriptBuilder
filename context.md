@@ -29,6 +29,8 @@
 - 左侧搜索栏固定宽度：`SEARCH_PANE_WIDTH = 580`
 - 右侧预览栏固定宽度：`PREVIEW_PANE_WIDTH = 400`
 - 中间编辑区使用剩余空间：`EDITOR_PANE_WEIGHT = 6`
+- 参数区内 MineTweaker 选项使用左侧纵向排列，避免被 `Recipe Map` 宽列推到右边。
+- MineTweaker 专项参数按脚本类型显隐：`shaped_mirrored` 仅有序合成，`include_furnace_xp` 仅熔炉，`fuel_ticks` 仅燃料。
 - 默认窗口：`1500 x 920`
 - 最小窗口：`1400 x 900`
 - 后续新增控件必须优先保持该比例，长内容通过滚动条处理。

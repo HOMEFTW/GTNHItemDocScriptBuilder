@@ -218,7 +218,7 @@ class MainWindow:
             text="写入熔炉 XP",
             variable=self.include_furnace_xp,
         )
-        self.include_furnace_xp_checkbox.grid(row=2, column=2, sticky=tk.W, padx=(8, 0), pady=2)
+        self.include_furnace_xp_checkbox.grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=2)
         ttk.Label(params, text="Duration:").grid(row=3, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
         self.shaped_mirrored_checkbox = ttk.Checkbutton(
@@ -226,26 +226,27 @@ class MainWindow:
             text="镜像有序合成",
             variable=self.shaped_mirrored,
         )
-        self.shaped_mirrored_checkbox.grid(row=3, column=2, sticky=tk.W, padx=(8, 0), pady=2)
+        self.shaped_mirrored_checkbox.grid(row=6, column=0, columnspan=2, sticky=tk.W, pady=2)
         ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
         self.fuel_ticks_label_widget = ttk.Label(params, text="燃烧时间:")
-        self.fuel_ticks_label_widget.grid(row=4, column=2, sticky=tk.W, padx=(8, 4), pady=2)
-        ttk.Entry(params, textvariable=self.fuel_ticks_var, width=10).grid(row=4, column=3, sticky=tk.W, pady=2)
+        self.fuel_ticks_label_widget.grid(row=7, column=0, sticky=tk.W, pady=2)
+        self.fuel_ticks_entry = ttk.Entry(params, textvariable=self.fuel_ticks_var, width=10)
+        self.fuel_ticks_entry.grid(row=7, column=1, sticky=tk.W, pady=2)
         self.no_fluid_inputs_checkbox = ttk.Checkbutton(
             params,
             text="无流体输入",
             variable=self.no_fluid_inputs,
         )
-        self.no_fluid_inputs_checkbox.grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.no_fluid_inputs_checkbox.grid(row=8, column=0, sticky=tk.W, pady=2)
         self.no_fluid_outputs_checkbox = ttk.Checkbutton(
             params,
             text="无流体输出",
             variable=self.no_fluid_outputs,
         )
-        self.no_fluid_outputs_checkbox.grid(row=5, column=1, sticky=tk.W, pady=2)
+        self.no_fluid_outputs_checkbox.grid(row=8, column=1, sticky=tk.W, pady=2)
         self.remove_mode_label_widget = ttk.Label(params, text="删除布局:")
-        self.remove_mode_label_widget.grid(row=6, column=0, sticky=tk.W, pady=2)
+        self.remove_mode_label_widget.grid(row=9, column=0, sticky=tk.W, pady=2)
         self.remove_mode_combo = ttk.Combobox(
             params,
             textvariable=self.remove_mode,
@@ -253,7 +254,7 @@ class MainWindow:
             state="readonly",
             width=12,
         )
-        self.remove_mode_combo.grid(row=6, column=1, sticky=tk.W, pady=2)
+        self.remove_mode_combo.grid(row=9, column=1, sticky=tk.W, pady=2)
         self.remove_mode_combo.bind("<<ComboboxSelected>>", lambda _event: self._on_remove_mode_selected())
 
         self.fluid_inputs = FluidListFrame(parent, "流体输入", self._choose_fluid, self._refresh_preview)
@@ -262,7 +263,7 @@ class MainWindow:
         self.fluid_outputs.pack(fill=tk.X, pady=4)
         self._set_fluid_search_enabled(False)
         self._show_slot_editor(self.recipe_kind.get())
-        self._update_remove_options_visibility()
+        self._update_parameter_visibility()
 
     def _create_slot_editors(self, parent):
         for kind, layout in LAYOUTS.items():
@@ -362,7 +363,7 @@ class MainWindow:
 
     def _on_recipe_kind_selected(self):
         self._show_slot_editor(self.recipe_kind.get())
-        self._update_remove_options_visibility()
+        self._update_parameter_visibility()
         self._refresh_preview()
 
     def _on_remove_mode_selected(self):
@@ -377,6 +378,27 @@ class MainWindow:
         else:
             self.remove_mode_label_widget.grid_remove()
             self.remove_mode_combo.grid_remove()
+
+    def _update_minetweaker_options_visibility(self):
+        kind = self.recipe_kind.get()
+        if kind == "shaped":
+            self.shaped_mirrored_checkbox.grid()
+        else:
+            self.shaped_mirrored_checkbox.grid_remove()
+        if kind == "furnace":
+            self.include_furnace_xp_checkbox.grid()
+        else:
+            self.include_furnace_xp_checkbox.grid_remove()
+        if kind == "fuel":
+            self.fuel_ticks_label_widget.grid()
+            self.fuel_ticks_entry.grid()
+        else:
+            self.fuel_ticks_label_widget.grid_remove()
+            self.fuel_ticks_entry.grid_remove()
+
+    def _update_parameter_visibility(self):
+        self._update_remove_options_visibility()
+        self._update_minetweaker_options_visibility()
 
     def _on_template_selected(self):
         self.recipe_map.set(recipe_map_label(self._default_recipe_map(self.template_id.get())))
