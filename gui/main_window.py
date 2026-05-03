@@ -27,6 +27,7 @@ from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, Prev
 
 
 MIN_WINDOW_SIZE = (1400, 760)
+# UI priority: preserve this three-pane balance before adding new controls.
 SEARCH_PANE_WIDTH = 580
 PREVIEW_PANE_WIDTH = 400
 SEARCH_PANE_WEIGHT = 0

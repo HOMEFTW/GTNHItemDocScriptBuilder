@@ -2,6 +2,7 @@
 
 ## Next Priorities
 
+- [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
 - [ ] Support ore dictionary expressions such as `<ore:stickWood>` and `<ore:dustClay>` as first-class selectable inputs.
 - [ ] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
 - [ ] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.
