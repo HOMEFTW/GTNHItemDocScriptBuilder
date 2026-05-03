@@ -1,7 +1,15 @@
 import unittest
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
-from core.templates import RECIPE_MAPS, recipe_map_id_from_label, recipe_map_label, recipe_map_label_options
+from core.templates import (
+    RECIPE_MAPS,
+    recipe_map_id_from_label,
+    recipe_map_label,
+    recipe_map_label_options,
+    template_id_from_label,
+    template_label,
+    template_label_options,
+)
 from core.zs_generator import ZsGenerator
 
 
@@ -258,6 +266,33 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertIn("gt.recipe.largechemicalreactor", RECIPE_MAPS)
         self.assertIn("gtpp.recipe.componentassembler", RECIPE_MAPS)
         self.assertIn("gg.recipe.precise_assembler", RECIPE_MAPS)
+
+    def test_machine_template_options_are_simplified_to_generation_modes(self):
+        self.assertEqual(
+            [
+                "GT RA2",
+                "Thermal Expansion Furnace",
+                "Thermal Expansion Pulverizer",
+                "AE Grinder",
+                "AE Inscriber",
+            ],
+            template_label_options(),
+        )
+        self.assertEqual("GT RA2", template_label("generic_gt_machine"))
+        self.assertEqual("generic_gt_machine", template_id_from_label("GT RA2"))
+
+    def test_legacy_gt_like_template_ids_still_generate_with_old_default_recipe_map(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="cutter_like",
+            item_inputs=[self.item("<minecraft:iron_ingot>")],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+        self.assertIn("mods.gregtech.RA2", script)
+        self.assertIn('.addTo("gt.recipe.cuttingsaw");', script)
 
     def test_selected_recipe_map_overrides_template_default(self):
         draft = RecipeDraft(

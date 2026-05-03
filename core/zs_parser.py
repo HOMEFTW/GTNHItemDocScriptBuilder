@@ -14,14 +14,53 @@ class ParsedRecipe:
     recipe_number: int
     line_number: int
     marker: str
+    parseable_index: int = 1
+    parseable_count: int = 1
+    start_offset: int = 0
+    end_offset: int = 0
 
 
 def parse_zs_script(script: str) -> RecipeDraft:
     return parse_zs_script_with_source(script).draft
 
 
-def parse_zs_script_with_source(script: str, allowed_kinds: set[str] | None = None) -> ParsedRecipe:
+def parse_zs_script_with_source(
+    script: str,
+    allowed_kinds: set[str] | None = None,
+    occurrence: int = 0,
+) -> ParsedRecipe:
+    matches = parse_zs_script_matches(script, allowed_kinds)
+    if not matches:
+        if _found_candidates(script):
+            raise ValueError("当前脚本类型没有找到可解析的配方")
+        raise ValueError("未找到可导入的受支持 ZS 配方")
+    selected_index = len(matches) - 1 if occurrence < 0 else min(max(occurrence, 0), len(matches) - 1)
+    return matches[selected_index]
+
+
+def parse_zs_script_matches(script: str, allowed_kinds: set[str] | None = None) -> list[ParsedRecipe]:
     text = script
+    found = _found_candidates(text)
+    parseable = sorted(candidate for candidate in found if allowed_kinds is None or candidate[3] in allowed_kinds)
+    ordered_positions = sorted(candidate[0] for candidate in found)
+    results = []
+    for selected_index, (position, _index, marker, _kind, parser) in enumerate(parseable):
+        results.append(
+            ParsedRecipe(
+                draft=parser(text[position:]),
+                recipe_number=ordered_positions.index(position) + 1,
+                line_number=text.count("\n", 0, position) + 1,
+                marker=marker,
+                parseable_index=selected_index + 1,
+                parseable_count=len(parseable),
+                start_offset=position,
+                end_offset=_recipe_end_offset(text, position, marker),
+            )
+        )
+    return results
+
+
+def _found_candidates(text: str):
     candidates = [
         ("mods.gregtech.RecipeRemover.remove", "remove_machine", lambda value: _parse_gt_remover(value)),
         ("mods.gregtech.RA2", "machine", lambda value: _parse_gt_machine(value)),
@@ -41,19 +80,34 @@ def parse_zs_script_with_source(script: str, allowed_kinds: set[str] | None = No
         while (position := text.find(marker, start)) >= 0:
             found.append((position, index, marker, kind, parser))
             start = position + len(marker)
-    if found:
-        parseable = [candidate for candidate in found if allowed_kinds is None or candidate[3] in allowed_kinds]
-        if not parseable:
-            raise ValueError("当前脚本类型没有找到可解析的配方")
-        position, _index, marker, _kind, parser = min(parseable)
-        ordered_positions = sorted(candidate[0] for candidate in found)
-        return ParsedRecipe(
-            draft=parser(text),
-            recipe_number=ordered_positions.index(position) + 1,
-            line_number=text.count("\n", 0, position) + 1,
-            marker=marker,
-        )
-    raise ValueError("未找到可导入的受支持 ZS 配方")
+    return found
+
+
+def _recipe_end_offset(text: str, position: int, marker: str) -> int:
+    if marker == "mods.gregtech.RA2":
+        add_to = text.find(".addTo", position)
+        if add_to < 0:
+            return _line_end_offset(text, position)
+        end = _call_end_offset(text, add_to, ".addTo")
+    else:
+        end = _call_end_offset(text, position, marker)
+    while end < len(text) and text[end].isspace() and text[end] != "\n":
+        end += 1
+    if end < len(text) and text[end] == ";":
+        end += 1
+    return end
+
+
+def _call_end_offset(text: str, start: int, name: str) -> int:
+    open_index = text.find("(", start + len(name))
+    if open_index < 0:
+        return _line_end_offset(text, start)
+    return _matching_paren(text, open_index) + 1
+
+
+def _line_end_offset(text: str, start: int) -> int:
+    line_end = text.find("\n", start)
+    return len(text) if line_end < 0 else line_end
 
 
 def _parse_gt_machine(text: str) -> RecipeDraft:

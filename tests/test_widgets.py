@@ -2,6 +2,7 @@ import tkinter as tk
 import unittest
 
 from core.ore_dictionary_index import OreDictionaryIndexStore
+from core.recipe_model import ScriptFluid
 from gui.widgets import FluidListFrame, FluidListRowsFrame, ItemSearchFrame, OreDictionarySearchDialog, PreviewFrame
 
 
@@ -46,6 +47,27 @@ class FluidListFrameTest(unittest.TestCase):
         self.assertEqual(2, len(fluids))
         self.assertEqual("<liquid:water> * 1000", fluids[0].to_zs())
         self.assertEqual("<liquid:chlorine> * 144", fluids[1].to_zs())
+
+    def test_adjustable_multi_row_frame_uses_count_entry(self):
+        frame = FluidListRowsFrame(self.root, "流体输入", 1, lambda _target: None, lambda: None, adjustable=True)
+
+        self.assertEqual("条数:", frame.count_label_widget.cget("text"))
+        self.assertEqual(1, len(frame.rows))
+        frame.count_var.set("3")
+
+        self.assertEqual(3, len(frame.rows))
+        self.assertEqual("3:", frame.rows[2].grid_label.cget("text"))
+
+    def test_adjustable_multi_row_frame_expands_to_loaded_fluids(self):
+        frame = FluidListRowsFrame(self.root, "流体输出", 1, lambda _target: None, lambda: None, adjustable=True)
+
+        frame.set_fluids([])
+        self.assertEqual(1, len(frame.rows))
+        frame.set_fluids([ScriptFluid("water", 1000), ScriptFluid("steam", 1000)])
+
+        self.assertEqual(2, len(frame.rows))
+        self.assertEqual("2", frame.count_var.get())
+        self.assertEqual("<liquid:steam> * 1000", frame.fluids()[1].to_zs())
 
 
 class PreviewFrameTest(unittest.TestCase):

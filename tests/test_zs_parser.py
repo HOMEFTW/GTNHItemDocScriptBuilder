@@ -2,7 +2,7 @@ import unittest
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
 from core.zs_generator import ZsGenerator
-from core.zs_parser import parse_zs_script, parse_zs_script_with_source
+from core.zs_parser import parse_zs_script, parse_zs_script_matches, parse_zs_script_with_source
 
 
 class ZsParserTest(unittest.TestCase):
@@ -75,6 +75,87 @@ class ZsParserTest(unittest.TestCase):
 
         self.assertEqual(1, parsed.recipe_number)
         self.assertEqual(1, parsed.line_number)
+
+    def test_parses_requested_occurrence_for_current_kind(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);\n"
+            "recipes.addShapeless(<minecraft:chest>, [<minecraft:planks>]);\n"
+        )
+
+        parsed = parse_zs_script_with_source(script, allowed_kinds={"shapeless"}, occurrence=1)
+
+        self.assertEqual("<minecraft:torch>", parsed.draft.item_outputs[0].expression)
+        self.assertEqual(2, parsed.recipe_number)
+        self.assertEqual(2, parsed.line_number)
+        self.assertEqual(2, parsed.parseable_index)
+        self.assertEqual(3, parsed.parseable_count)
+
+    def test_negative_occurrence_parses_last_current_kind(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);\n"
+        )
+
+        parsed = parse_zs_script_with_source(script, allowed_kinds={"shapeless"}, occurrence=-1)
+
+        self.assertEqual("<minecraft:torch>", parsed.draft.item_outputs[0].expression)
+        self.assertEqual(2, parsed.parseable_index)
+        self.assertEqual(2, parsed.parseable_count)
+
+    def test_lists_all_matches_for_current_kind(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "mods.gregtech.RA2.builder().itemInputs([<minecraft:piston>]).itemOutputs([<minecraft:bucket>])"
+            ".fluidInputs([]).fluidOutputs([]).duration(200).eut(30).addTo(\"gt.recipe.assembler\");\n"
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);\n"
+        )
+
+        matches = parse_zs_script_matches(script, allowed_kinds={"shapeless"})
+
+        self.assertEqual(2, len(matches))
+        self.assertEqual("<minecraft:stick>", matches[0].draft.item_outputs[0].expression)
+        self.assertEqual("<minecraft:torch>", matches[1].draft.item_outputs[0].expression)
+        self.assertEqual(1, matches[0].parseable_index)
+        self.assertEqual(2, matches[1].parseable_index)
+        self.assertEqual(3, matches[1].recipe_number)
+        self.assertEqual(3, matches[1].line_number)
+
+    def test_reports_source_offsets_for_replacement(self):
+        script = (
+            "// header\n"
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);\n"
+            "// footer"
+        )
+
+        parsed = parse_zs_script_with_source(script, allowed_kinds={"shapeless"}, occurrence=1)
+
+        self.assertEqual(
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);",
+            script[parsed.start_offset : parsed.end_offset],
+        )
+
+    def test_reports_gt_machine_source_offsets_through_add_to(self):
+        script = (
+            "// before\n"
+            "mods.gregtech.RA2\n"
+            "    .builder()\n"
+            "    .itemInputs([<minecraft:piston>])\n"
+            "    .itemOutputs([<minecraft:bucket>])\n"
+            "    .fluidInputs([])\n"
+            "    .fluidOutputs([])\n"
+            "    .duration(200)\n"
+            "    .eut(30)\n"
+            "    .addTo(\"gt.recipe.assembler\");\n"
+            "// after"
+        )
+
+        parsed = parse_zs_script_with_source(script, allowed_kinds={"machine"})
+
+        self.assertTrue(script[parsed.start_offset : parsed.end_offset].startswith("mods.gregtech.RA2"))
+        self.assertTrue(script[parsed.start_offset : parsed.end_offset].endswith('.addTo("gt.recipe.assembler");'))
+        self.assertNotIn("// after", script[parsed.start_offset : parsed.end_offset])
 
     def test_parses_only_requested_script_kind(self):
         script = (

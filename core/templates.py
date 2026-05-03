@@ -309,37 +309,13 @@ class MachineTemplate:
 TEMPLATES: Dict[str, MachineTemplate] = {
     "generic_gt_machine": MachineTemplate(
         "generic_gt_machine",
-        "Generic GT Machine",
+        "GT RA2",
         16,
-        4,
+        9,
         4,
         4,
         "generic_gt",
         "gt.recipe.assembler",
-    ),
-    "assembler_like": MachineTemplate("assembler_like", "Assembler-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.assembler"),
-    "cutter_like": MachineTemplate("cutter_like", "Cutter-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.cuttingsaw"),
-    "macerator_like": MachineTemplate("macerator_like", "Macerator-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.macerator"),
-    "mixer_like": MachineTemplate("mixer_like", "Mixer-like", 16, 4, 4, 4, "generic_gt", "gt.recipe.mixer"),
-    "chemical_reactor_like": MachineTemplate(
-        "chemical_reactor_like",
-        "Chemical Reactor-like",
-        16,
-        4,
-        4,
-        4,
-        "generic_gt",
-        "gt.recipe.chemicalreactor",
-    ),
-    "blast_furnace_like": MachineTemplate(
-        "blast_furnace_like",
-        "Blast Furnace-like",
-        16,
-        4,
-        4,
-        4,
-        "generic_gt",
-        "gt.recipe.blastfurnace",
     ),
     "thermal_expansion_furnace": MachineTemplate(
         "thermal_expansion_furnace",
@@ -364,8 +340,54 @@ TEMPLATES: Dict[str, MachineTemplate] = {
 }
 
 
+LEGACY_GT_TEMPLATE_RECIPE_MAPS: Dict[str, str] = {
+    "assembler_like": "gt.recipe.assembler",
+    "cutter_like": "gt.recipe.cuttingsaw",
+    "macerator_like": "gt.recipe.macerator",
+    "mixer_like": "gt.recipe.mixer",
+    "chemical_reactor_like": "gt.recipe.chemicalreactor",
+    "blast_furnace_like": "gt.recipe.blastfurnace",
+}
+
+
 def template_options() -> List[MachineTemplate]:
     return list(TEMPLATES.values())
+
+
+def normalize_template_id(template_id: str) -> str:
+    value = template_id.strip()
+    if value in TEMPLATES:
+        return value
+    if value in LEGACY_GT_TEMPLATE_RECIPE_MAPS:
+        return "generic_gt_machine"
+    return "generic_gt_machine"
+
+
+def default_recipe_map_for_template(template_id: str) -> str:
+    value = template_id.strip()
+    if value in LEGACY_GT_TEMPLATE_RECIPE_MAPS:
+        return LEGACY_GT_TEMPLATE_RECIPE_MAPS[value]
+    template = TEMPLATES.get(normalize_template_id(value))
+    if template is None:
+        return "gt.recipe.assembler"
+    return template.recipe_map or "gt.recipe.assembler"
+
+
+def template_label(template_id: str) -> str:
+    template = TEMPLATES[normalize_template_id(template_id)]
+    return template.display_name
+
+
+def template_label_options() -> List[str]:
+    return [template.display_name for template in template_options()]
+
+
+def template_id_from_label(label: str) -> str:
+    value = label.strip()
+    for template in template_options():
+        if template.display_name == value:
+            return template.template_id
+    return normalize_template_id(value)
 
 
 def recipe_map_options() -> List[str]:

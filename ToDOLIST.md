@@ -1,12 +1,11 @@
 # ToDOLIST
 
-## Next Priorities
+## 下一步优先事项
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
 - [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`.
-- [ ] Add a multi-draft import list for complete scripts like `ZZZ-NxerCustoms.zs`, so multiple parsed recipes can be selected one by one.
 
-## Notes From `D:\Code\ZZZ-NxerCustoms.zs`
+## 来自 `D:\Code\ZZZ-NxerCustoms.zs` 的记录
 
 - Uses CraftTweaker shaped/shapeless recipes with both compact one-line and multi-line formatting.
 - Uses furnace recipes with two arguments, while current generator emits three arguments with XP for the explicit furnace mode.
@@ -35,8 +34,28 @@
 - 现有 GUI 的 recipe map 选择是正确方向，因为真实脚本在 assembler、extruder、electrolyzer、largechemicalreactor、distillationtower、brewer、multielectro 等多张 map 间切换非常频繁。
 - 完整 `.zs` 导入功能值得做：先不追求编辑所有语法，至少可以解析 RA2 块、CraftTweaker 合成、furnace、RecipeRemover，生成可继续编辑的草稿。
 
-## Completed
+## 已完成
 
+- [x] 增加应用基本信息和“关于”对话框：右上角“关于”按钮显示 `GTNHItemDocScriptBuilder`、版本 `1.0.0`、工作室 `Andgatech`。
+- [x] 手写模式下切换脚本类型自动清空配方格和流体行，避免旧类型内容误带入新类型。
+- [x] 使用项目目录下的 `icon.ico` 作为 Tk 窗口图标和 PyInstaller exe 图标，并作为运行时资源打包。
+- [x] 加高主窗口：默认高度改为 `1080`，最小高度改为 `1040`；上方两个列表高度不变，新增高度留给下面三栏。
+- [x] 增加脚本草稿列表：可保存当前草稿、载入选中草稿、删除选中草稿，并按列表顺序把全部草稿追加到完整脚本。
+- [x] 增加生成前草稿校验：`添加到脚本` 和 `替换原配方` 会阻止无效草稿写入完整脚本，并提示缺输入/输出或数字字段非法。
+- [x] 增加未导入 `.zs` 时的新建/保存工作流：`新建 .zs` 创建并绑定当前脚本文件，`保存` 直接覆盖当前文件，`另存为` 切换当前文件路径，并在工具栏显示当前路径。
+- [x] 将机器“模板”简化为“生成方式”：GT 只保留 `GT RA2`，具体机器改由 `Recipe Map` 选择；旧 GT-like 模板 ID 自动迁移并保留默认 recipe map。
+- [x] 增加解析模式：点击“解析到GUI”后切换脚本类型会自动按当前类型重新解析，点击“关闭解析”后回到手动草稿模式。
+- [x] 增加脚本编辑安全能力：“添加到脚本”可选择文件末尾、当前光标、当前配方后，并支持“替换原配方”。
+- [x] 增强配方列表摘要：合成显示 `输出 <- 输入`，GT 显示 `recipe map: 输入 -> 输出`，删除显示删除目标。
+- [x] 当前草稿自动生成中文注释，合成和 GT 机器会根据物品、流体、数量和 recipe map 写说明。
+- [x] 自动注释中有中文名的物品/流体显示为 `中文名 <ct表达式> * 数量`。
+- [x] 增加当前脚本类型的配方列表：显示序号、行号、类型和摘要，点击某行可直接解析到 GUI。
+- [x] 增加 `.zs` 解析导航按钮：第一条、上一条、下一条、最后一条，可在当前脚本类型的匹配配方之间切换。
+- [x] 将 GT 机器流体输入和流体输出改成分别可填写条数的动态 UI，默认各 1 条。
+- [x] 压缩顶部工具栏按钮宽度和间距，减少按钮挤占界面空间。
+- [x] 修复顶部工具栏按钮过紧导致文字难以辨认的问题，中文按钮按显示宽度预留空间。
+- [x] 将顶部工具栏改成两排按钮，并把“选索引”恢复为“选择 item_index.json”。
+- [x] 将默认窗口高度增加到 `980`，最小高度和旧配置归一化高度增加到 `960`。
 - [x] 给中间编辑栏增加竖向滚动条，参数和格子过多时可向下滚动查看。
 - [x] 完善 GT `RecipeRemover.remove(...)` 编辑器：物品输入使用 16 格，流体输入使用独立 4 行列表并支持搜索和数量。
 - [x] 增加 `.zs` 导入继续编辑 MVP：可解析本工具生成的 RA2、GT 删除、合成、熔炉和燃料脚本并填回当前 GUI 草稿。

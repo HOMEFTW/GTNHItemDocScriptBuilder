@@ -21,6 +21,7 @@ class ScriptItem:
 class ScriptFluid:
     name_or_expression: str
     amount: int
+    comment_name: str = ""
 
     def to_zs(self) -> str:
         value = self.name_or_expression.strip()

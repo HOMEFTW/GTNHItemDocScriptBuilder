@@ -4,7 +4,7 @@ a = Analysis(
     ["main.py"],
     pathex=[],
     binaries=[],
-    datas=[("config.json", ".")],
+    datas=[("config.json", "."), ("icon.ico", ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -27,4 +27,5 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
+    icon="icon.ico",
 )

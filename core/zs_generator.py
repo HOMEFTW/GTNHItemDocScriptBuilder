@@ -2,7 +2,7 @@
 from typing import Iterable, Optional
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
-from core.templates import TEMPLATES
+from core.templates import TEMPLATES, default_recipe_map_for_template, normalize_template_id
 
 
 class ZsGenerator:
@@ -64,7 +64,8 @@ class ZsGenerator:
         return f"recipes.remove({output.to_zs()});"
 
     def _machine(self, draft: RecipeDraft) -> str:
-        template = TEMPLATES.get(draft.template_id)
+        template_id = normalize_template_id(draft.template_id)
+        template = TEMPLATES.get(template_id)
         if template is None:
             raise ValueError(f"Unknown machine template: {draft.template_id}")
         if template.style == "te_furnace":
@@ -114,7 +115,7 @@ class ZsGenerator:
         return f"mods.appeng.Inscriber.addRecipe({center}, {top}, {bottom}, {output.to_zs()}, \"Inscriber\");"
 
     def _generic_gt(self, draft: RecipeDraft) -> str:
-        template = TEMPLATES[draft.template_id]
+        template = TEMPLATES[normalize_template_id(draft.template_id)]
         outputs = self._present_items(draft.item_outputs)
         if not outputs:
             raise ValueError("GTNH machine template needs at least one item output")
@@ -136,7 +137,8 @@ class ZsGenerator:
         )
 
     def _machine_remove(self, draft: RecipeDraft) -> str:
-        template = TEMPLATES.get(draft.template_id)
+        template_id = normalize_template_id(draft.template_id)
+        template = TEMPLATES.get(template_id)
         if template is None:
             raise ValueError(f"Unknown machine template: {draft.template_id}")
         if template.style != "generic_gt":
@@ -151,7 +153,7 @@ class ZsGenerator:
         )
 
     def _recipe_map(self, draft: RecipeDraft, template) -> str:
-        return draft.recipe_map.strip() or template.recipe_map or "gt.recipe.assembler"
+        return draft.recipe_map.strip() or default_recipe_map_for_template(draft.template_id)
 
     def _first_required_item(self, items: Iterable[Optional[ScriptItem]], message: str) -> ScriptItem:
         for item in items:

@@ -354,6 +354,7 @@ class FluidListFrame(ttk.LabelFrame):
         self.on_change = on_change
         self.name_var = tk.StringVar()
         self.amount_var = tk.StringVar(value="1000")
+        self.comment_name = ""
         self.name_var.trace_add("write", lambda *_: self.on_change())
         self.amount_var.trace_add("write", lambda *_: self.on_change())
         ttk.Label(self, text="流体:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -372,6 +373,7 @@ class FluidListFrame(ttk.LabelFrame):
 
     def set_fluid(self, entry: FluidEntry):
         self.name_var.set(entry.ct_expression)
+        self.comment_name = entry.chinese_name
 
     def set_fluids(self, fluids: List[ScriptFluid]):
         if not fluids:
@@ -379,15 +381,17 @@ class FluidListFrame(ttk.LabelFrame):
             return
         self.name_var.set(fluids[0].name_or_expression)
         self.amount_var.set(str(fluids[0].amount))
+        self.comment_name = fluids[0].comment_name
 
     def clear(self):
         self.name_var.set("")
+        self.comment_name = ""
 
     def fluids(self) -> List[ScriptFluid]:
         name = self.name_var.get().strip()
         if not name:
             return []
-        return [ScriptFluid(name, int(self.amount_var.get() or "0"))]
+        return [ScriptFluid(name, int(self.amount_var.get() or "0"), getattr(self, "comment_name", ""))]
 
 
 class FluidRowFrame(ttk.Frame):
@@ -403,9 +407,11 @@ class FluidRowFrame(ttk.Frame):
         self.on_change = on_change
         self.name_var = tk.StringVar()
         self.amount_var = tk.StringVar(value="1000")
+        self.comment_name = ""
         self.name_var.trace_add("write", lambda *_: self.on_change())
         self.amount_var.trace_add("write", lambda *_: self.on_change())
-        ttk.Label(self, text=f"{index + 1}:").grid(row=0, column=0, sticky=tk.W, padx=(0, 2), pady=2)
+        self.grid_label = ttk.Label(self, text=f"{index + 1}:")
+        self.grid_label.grid(row=0, column=0, sticky=tk.W, padx=(0, 2), pady=2)
         self.fluid_entry = ttk.Entry(self, textvariable=self.name_var)
         self.fluid_entry.grid(row=0, column=1, sticky=tk.EW, padx=2, pady=2)
         ttk.Label(self, text="数量:").grid(row=0, column=2, sticky=tk.W, padx=(4, 2), pady=2)
@@ -421,15 +427,17 @@ class FluidRowFrame(ttk.Frame):
 
     def set_fluid(self, entry: FluidEntry):
         self.name_var.set(entry.ct_expression)
+        self.comment_name = entry.chinese_name
 
     def clear(self):
         self.name_var.set("")
+        self.comment_name = ""
 
     def fluid(self) -> Optional[ScriptFluid]:
         name = self.name_var.get().strip()
         if not name:
             return None
-        return ScriptFluid(name, int(self.amount_var.get() or "0"))
+        return ScriptFluid(name, int(self.amount_var.get() or "0"), self.comment_name)
 
 
 class FluidListRowsFrame(ttk.LabelFrame):
@@ -440,24 +448,58 @@ class FluidListRowsFrame(ttk.LabelFrame):
         count: int,
         on_search: Callable[[FluidRowFrame], None],
         on_change: Callable[[], None],
+        adjustable: bool = False,
     ):
         super().__init__(parent, text=text, padding=5)
+        self.on_search = on_search
+        self.on_change = on_change
+        self.adjustable = adjustable
+        self.count_var = tk.StringVar(value=str(max(count, 1)))
+        if adjustable:
+            controls = ttk.Frame(self)
+            controls.pack(fill=tk.X, pady=(0, 3))
+            self.count_label_widget = ttk.Label(controls, text="条数:")
+            self.count_label_widget.pack(side=tk.LEFT)
+            self.count_entry = ttk.Entry(controls, textvariable=self.count_var, width=5)
+            self.count_entry.pack(side=tk.LEFT, padx=(4, 8))
+            self.count_var.trace_add("write", lambda *_: self._sync_row_count_from_var())
+        self.row_container = ttk.Frame(self)
+        self.row_container.pack(fill=tk.X)
         self.rows: List[FluidRowFrame] = []
-        for index in range(count):
-            row = FluidRowFrame(self, index, on_search, on_change)
-            row.pack(fill=tk.X, pady=1)
-            self.rows.append(row)
+        self._set_row_count(max(count, 1))
 
     def set_search_enabled(self, enabled: bool):
         for row in self.rows:
             row.set_search_enabled(enabled)
 
     def set_fluids(self, fluids: List[ScriptFluid]):
+        if self.adjustable:
+            self.count_var.set(str(max(len(fluids), 1)))
         for row, fluid in zip(self.rows, fluids):
             row.name_var.set(fluid.name_or_expression)
             row.amount_var.set(str(fluid.amount))
+            row.comment_name = fluid.comment_name
         for row in self.rows[len(fluids) :]:
             row.clear()
 
     def fluids(self) -> List[ScriptFluid]:
         return [fluid for row in self.rows if (fluid := row.fluid()) is not None]
+
+    def _sync_row_count_from_var(self):
+        value = self.count_var.get().strip()
+        if not value:
+            return
+        try:
+            count = int(value)
+        except ValueError:
+            return
+        self._set_row_count(max(count, 1))
+
+    def _set_row_count(self, count: int):
+        while len(self.rows) > count:
+            row = self.rows.pop()
+            row.destroy()
+        while len(self.rows) < count:
+            row = FluidRowFrame(self.row_container, len(self.rows), self.on_search, self.on_change)
+            row.pack(fill=tk.X, pady=1)
+            self.rows.append(row)
