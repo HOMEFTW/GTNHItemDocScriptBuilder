@@ -102,6 +102,28 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_minetweaker_options_are_available_in_parameters(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertEqual("镜像有序合成", window.shaped_mirrored_checkbox.cget("text"))
+            self.assertEqual("写入熔炉 XP", window.include_furnace_xp_checkbox.cget("text"))
+            self.assertEqual("燃烧时间:", window.fuel_ticks_label_widget.cget("text"))
+            window.shaped_mirrored.set(True)
+            window.include_furnace_xp.set(False)
+            window.fuel_ticks_var.set("1600")
+            draft = window._draft()
+
+            self.assertTrue(draft.shaped_mirrored)
+            self.assertFalse(draft.include_furnace_xp)
+            self.assertEqual(1600, draft.fuel_ticks)
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

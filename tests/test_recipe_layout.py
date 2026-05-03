@@ -19,6 +19,13 @@ class RecipeLayoutTest(unittest.TestCase):
         self.assertEqual(1, layout.output_count)
         self.assertEqual(1, layout.output_columns)
 
+    def test_fuel_uses_one_input_and_no_output(self):
+        layout = layout_for_kind("fuel")
+        self.assertEqual(1, layout.input_count)
+        self.assertEqual(1, layout.input_columns)
+        self.assertEqual(0, layout.output_count)
+        self.assertEqual(1, layout.output_columns)
+
     def test_machine_keeps_gt_grid(self):
         layout = layout_for_kind("machine")
         self.assertEqual(16, layout.input_count)

@@ -41,6 +41,9 @@ class RecipeDraft:
     duration: int = 200
     eut: int = 30
     xp: float = 0.0
+    include_furnace_xp: bool = True
+    shaped_mirrored: bool = False
+    fuel_ticks: int = 1600
     remove_mode: str = "all"
     template_id: str = "generic_gt_machine"
     recipe_map: str = ""

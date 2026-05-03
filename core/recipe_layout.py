@@ -16,6 +16,7 @@ LAYOUTS = {
     "shaped": RecipeLayout("输入格 3 x 3", 9, 3, "输出格", 1, 1),
     "shapeless": RecipeLayout("输入格 3 x 3", 9, 3, "输出格", 1, 1),
     "furnace": RecipeLayout("输入格", 1, 1, "输出格", 1, 1),
+    "fuel": RecipeLayout("燃料物品格", 1, 1, "无输出格", 0, 1),
     "remove_shaped": RecipeLayout("删除有序配方输入格 3 x 3", 9, 3, "删除目标输出格", 1, 1),
     "remove_shapeless": RecipeLayout("删除无序配方输入格 3 x 3", 9, 3, "删除目标输出格", 1, 1),
     "remove_furnace": RecipeLayout("删除熔炉输入格", 1, 1, "删除目标输出格", 1, 1),

@@ -32,6 +32,27 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertIn("recipes.addShaped(<minecraft:chest>,", script)
         self.assertIn("[<minecraft:planks>, null, <minecraft:planks>]", script)
 
+    def test_generates_mirrored_shaped_recipe(self):
+        draft = RecipeDraft(
+            kind="shaped",
+            item_inputs=[
+                self.item("<minecraft:planks>"),
+                None,
+                None,
+                None,
+                self.item("<minecraft:stick>"),
+                None,
+                None,
+                None,
+                self.item("<minecraft:stick>"),
+            ],
+            item_outputs=[self.item("<minecraft:wooden_sword>")],
+            shaped_mirrored=True,
+        )
+        script = self.generator.generate(draft)
+
+        self.assertIn("recipes.addShapedMirrored(<minecraft:wooden_sword>,", script)
+
     def test_generates_shapeless_recipe_with_amount(self):
         draft = RecipeDraft(
             kind="shapeless",
@@ -76,6 +97,31 @@ class ZsGeneratorTest(unittest.TestCase):
         )
         self.assertEqual(
             "furnace.addRecipe(<minecraft:glass>, <minecraft:sand>, 0.0);",
+            self.generator.generate(draft).strip(),
+        )
+
+    def test_generates_furnace_recipe_without_xp(self):
+        draft = RecipeDraft(
+            kind="furnace",
+            item_inputs=[self.item("<minecraft:sand>")],
+            item_outputs=[self.item("<minecraft:glass>")],
+            include_furnace_xp=False,
+        )
+
+        self.assertEqual(
+            "furnace.addRecipe(<minecraft:glass>, <minecraft:sand>);",
+            self.generator.generate(draft).strip(),
+        )
+
+    def test_generates_furnace_fuel_script(self):
+        draft = RecipeDraft(
+            kind="fuel",
+            item_inputs=[self.item("<minecraft:coal>")],
+            fuel_ticks=1600,
+        )
+
+        self.assertEqual(
+            "furnace.setFuel(<minecraft:coal>, 1600);",
             self.generator.generate(draft).strip(),
         )
 

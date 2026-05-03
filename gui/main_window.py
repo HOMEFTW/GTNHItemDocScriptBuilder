@@ -73,6 +73,9 @@ class MainWindow:
         initial_recipe_map = self.config.last_recipe_map or self._default_recipe_map(self.config.last_template)
         self.recipe_map = tk.StringVar(value=recipe_map_label(recipe_map_id_from_label(initial_recipe_map)))
         self.xp_var = tk.StringVar(value="0.0")
+        self.include_furnace_xp = tk.BooleanVar(value=True)
+        self.shaped_mirrored = tk.BooleanVar(value=False)
+        self.fuel_ticks_var = tk.StringVar(value="1600")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
@@ -81,6 +84,9 @@ class MainWindow:
         self.no_fluid_outputs = tk.BooleanVar(value=False)
         self.no_fluid_inputs.trace_add("write", lambda *_: self._refresh_preview())
         self.no_fluid_outputs.trace_add("write", lambda *_: self._refresh_preview())
+        self.include_furnace_xp.trace_add("write", lambda *_: self._refresh_preview())
+        self.shaped_mirrored.trace_add("write", lambda *_: self._refresh_preview())
+        self.fuel_ticks_var.trace_add("write", lambda *_: self._refresh_preview())
         self.selected_item_amount = tk.StringVar(value="1")
         self.selected_item_suffix = tk.StringVar(value="")
         self._syncing_selected_item_options = False
@@ -149,6 +155,7 @@ class MainWindow:
             ("有序合成", "shaped"),
             ("无序合成", "shapeless"),
             ("熔炉", "furnace"),
+            ("燃料", "fuel"),
             ("删除", "remove"),
             ("GTNH/模组机器", "machine"),
         ]
@@ -206,10 +213,25 @@ class MainWindow:
 
         ttk.Label(params, text="XP:").grid(row=2, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.xp_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=2)
+        self.include_furnace_xp_checkbox = ttk.Checkbutton(
+            params,
+            text="写入熔炉 XP",
+            variable=self.include_furnace_xp,
+        )
+        self.include_furnace_xp_checkbox.grid(row=2, column=2, sticky=tk.W, padx=(8, 0), pady=2)
         ttk.Label(params, text="Duration:").grid(row=3, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
+        self.shaped_mirrored_checkbox = ttk.Checkbutton(
+            params,
+            text="镜像有序合成",
+            variable=self.shaped_mirrored,
+        )
+        self.shaped_mirrored_checkbox.grid(row=3, column=2, sticky=tk.W, padx=(8, 0), pady=2)
         ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
+        self.fuel_ticks_label_widget = ttk.Label(params, text="燃烧时间:")
+        self.fuel_ticks_label_widget.grid(row=4, column=2, sticky=tk.W, padx=(8, 4), pady=2)
+        ttk.Entry(params, textvariable=self.fuel_ticks_var, width=10).grid(row=4, column=3, sticky=tk.W, pady=2)
         self.no_fluid_inputs_checkbox = ttk.Checkbutton(
             params,
             text="无流体输入",
@@ -466,6 +488,9 @@ class MainWindow:
             duration=int(self.duration_var.get() or "0"),
             eut=int(self.eut_var.get() or "0"),
             xp=float(self.xp_var.get() or "0"),
+            include_furnace_xp=bool(self.include_furnace_xp.get()),
+            shaped_mirrored=bool(self.shaped_mirrored.get()),
+            fuel_ticks=int(self.fuel_ticks_var.get() or "0"),
             remove_mode=remove_mode_id_from_label(self.remove_mode.get()),
             template_id=self.template_id.get(),
             recipe_map=recipe_map_id_from_label(self.recipe_map.get()),

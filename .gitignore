@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 build/
 dist/
+dist_next/
 *.spec~
 .test_tmp/
 test_output/

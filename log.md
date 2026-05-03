@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-05-03: MineTweaker 合成与熔炉补充
+
+### Completed
+- 为 `RecipeDraft` 增加 `shaped_mirrored`、`include_furnace_xp` 和 `fuel_ticks`。
+- 生成器支持 `recipes.addShapedMirrored(...)`、两参数 `furnace.addRecipe(output, input)` 和 `furnace.setFuel(item, ticks)`。
+- GUI 脚本类型增加“燃料”，布局为 1 个输入格、无输出格。
+- 参数区增加“镜像有序合成”、“写入熔炉 XP”和“燃烧时间”控件。
+- 补充生成器、布局和 GUI 测试，保持左侧 `580px`、右侧 `400px` 的三栏比例常量不变。
+
+### Issues Encountered
+- **真实脚本存在两参数熔炉写法**：原生成器固定输出 XP 参数 → 增加 `include_furnace_xp` 开关。
+
+### Decisions Made
+- “燃料”作为独立脚本类型处理，避免和熔炉配方共用输出格造成误填。
+
+---
+
 ## 2026-05-03: RA2 无流体输入输出开关
 
 ### Completed

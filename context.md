@@ -19,7 +19,7 @@
 | Area | Implementation | Status |
 |------|----------------|--------|
 | 左侧物品搜索 | `gui.widgets.ItemSearchFrame` | 已支持中文名、英文名、注册 ID 搜索，并带横向滚动条 |
-| 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、删除、GTNH/模组机器布局 |
+| 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、燃料、删除、GTNH/模组机器布局 |
 | 选中物品格编辑 | `gui.main_window.MainWindow` | 已支持数量 `0` 和 `.withTag(...)` 等后缀 |
 | 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已支持横向和竖向滚动条 |
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |
@@ -37,8 +37,10 @@
 | Feature | Status |
 |---------|--------|
 | Shaped crafting | 已支持 |
+| Mirrored shaped crafting | 已支持，参数区“镜像有序合成”生成 `recipes.addShapedMirrored(...)` |
 | Shapeless crafting | 已支持 |
-| Furnace recipe | 已支持 |
+| Furnace recipe | 已支持，可选择是否写入 XP 参数 |
+| Furnace fuel | 已支持，生成 `furnace.setFuel(item, ticks)` |
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
 | GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、duration、EU/t、recipe map、无流体输入/输出开关 |
 | Ore dictionary inputs | 已支持输入格填入 |

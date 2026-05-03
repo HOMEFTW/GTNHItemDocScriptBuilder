@@ -13,6 +13,8 @@ class ZsGenerator:
             return self._shapeless(draft)
         if draft.kind == "furnace":
             return self._furnace(draft)
+        if draft.kind == "fuel":
+            return self._fuel(draft)
         if draft.kind == "remove":
             return self._remove(draft)
         if draft.kind == "machine":
@@ -25,7 +27,8 @@ class ZsGenerator:
         output = self._first_required_item(draft.item_outputs, "Shaped recipe needs an output")
         inputs = self._padded_items(draft.item_inputs, 9)
         rows = [self._item_array(inputs[index : index + 3]) for index in range(0, 9, 3)]
-        return "recipes.addShaped({}, [\n    {},\n    {},\n    {}\n]);".format(output.to_zs(), *rows)
+        method = "addShapedMirrored" if draft.shaped_mirrored else "addShaped"
+        return f"recipes.{method}({output.to_zs()}, [\n    {rows[0]},\n    {rows[1]},\n    {rows[2]}\n]);"
 
     def _shapeless(self, draft: RecipeDraft) -> str:
         output = self._first_required_item(draft.item_outputs, "Shapeless recipe needs an output")
@@ -37,7 +40,13 @@ class ZsGenerator:
     def _furnace(self, draft: RecipeDraft) -> str:
         output = self._first_required_item(draft.item_outputs, "Furnace recipe needs an output")
         input_item = self._first_required_item(draft.item_inputs, "Furnace recipe needs an input")
+        if not draft.include_furnace_xp:
+            return f"furnace.addRecipe({output.to_zs()}, {input_item.to_zs()});"
         return f"furnace.addRecipe({output.to_zs()}, {input_item.to_zs()}, {float(draft.xp):.1f});"
+
+    def _fuel(self, draft: RecipeDraft) -> str:
+        input_item = self._first_required_item(draft.item_inputs, "Furnace fuel needs an item")
+        return f"furnace.setFuel({input_item.to_zs()}, {draft.fuel_ticks});"
 
     def _remove(self, draft: RecipeDraft) -> str:
         if draft.remove_mode == "machine":
