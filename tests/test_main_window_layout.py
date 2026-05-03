@@ -1,7 +1,7 @@
 import unittest
 
 from core.ore_dictionary_index import OreDictionaryEntry
-from core.recipe_model import ScriptItem
+from core.recipe_model import RecipeDraft, ScriptItem
 from gui.main_window import (
     EDITOR_PANE_WEIGHT,
     MIN_WINDOW_SIZE,
@@ -254,6 +254,32 @@ class MainWindowLayoutTest(unittest.TestCase):
             self.assertEqual(2, len(draft.fluid_inputs))
             self.assertIn("<liquid:water> * 1000", window.generator.generate(draft))
             self.assertIn("<liquid:chlorine> * 144", window.generator.generate(draft))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_imported_gt_remove_draft_can_be_edited_again(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            draft = RecipeDraft(
+                kind="remove",
+                remove_mode="machine",
+                recipe_map="gt.recipe.assembler",
+                item_inputs=[ScriptItem("<minecraft:piston>"), ScriptItem("<ore:stickWood>")],
+                fluid_inputs=[],
+            )
+
+            window._load_draft(draft)
+            window.active_input_grid.slots[0].set_item(ScriptItem("<minecraft:sticky_piston>"))
+            imported = window._draft()
+
+            self.assertEqual("remove", window.recipe_kind.get())
+            self.assertEqual("GT", window.remove_mode.get())
+            self.assertEqual("<minecraft:sticky_piston>", imported.item_inputs[0].expression)
+            self.assertIn("<minecraft:sticky_piston>", window.generator.generate(imported))
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():

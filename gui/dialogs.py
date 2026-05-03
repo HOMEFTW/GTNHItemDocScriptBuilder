@@ -25,6 +25,15 @@ def choose_script_file(parent, initial_dir: str = "") -> str:
     )
 
 
+def choose_import_script_file(parent, initial_dir: str = "") -> str:
+    return filedialog.askopenfilename(
+        parent=parent,
+        title="导入 ZS 脚本",
+        initialdir=initial_dir,
+        filetypes=[("CraftTweaker script", "*.zs"), ("All files", "*.*")],
+    )
+
+
 def show_error(title: str, message: str) -> None:
     messagebox.showerror(title, message)
 

@@ -8,6 +8,12 @@ Tkinter 桌面工具，用 `GTNHItemDocExporter` 导出的 `item_index.json` 生
 python main.py
 ```
 
+## 导入继续编辑
+
+工具栏的“导入 .zs”可以读取已保存的脚本，把第一条受支持的配方恢复成当前 GUI 草稿。这样程序关闭后，再次打开并导入之前保存的 `.zs`，即可继续改物品格、流体、Recipe Map、Duration、EU/t 等参数。
+
+当前导入 MVP 支持本工具生成的主要格式：GTNH RA2 builder、GT `RecipeRemover.remove(...)`、有序/镜像有序/无序合成、熔炉配方、熔炉燃料、熔炉删除和普通删除。复杂手写脚本会尽量解析第一条匹配的受支持配方，不会执行或完整理解所有 ZenScript 语法。
+
 ## 输入
 
 选择导出的物品索引，例如：
@@ -35,6 +41,7 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - RA2 `.specialValue(...)`
 - RA2 `.specialItem(...)`
 - RA2 `.noFluidInputs()` / `.noFluidOutputs()` 开关
+- 导入 `.zs` 后继续编辑当前草稿
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，燃料为 1 个输入且无输出，GTNH/模组机器为 16 个物品输入加 9 个物品输出。机器模板支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
 

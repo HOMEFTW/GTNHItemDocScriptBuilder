@@ -17,7 +17,7 @@ from core.recipe_layout import (
     remove_mode_label,
     remove_mode_label_options,
 )
-from core.recipe_model import RecipeDraft, ScriptItem
+from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
 from core.script_project import AppConfig, save_script
 from core.templates import (
     TEMPLATES,
@@ -27,7 +27,8 @@ from core.templates import (
     template_options,
 )
 from core.zs_generator import ZsGenerator
-from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
+from core.zs_parser import parse_zs_script
+from gui.dialogs import choose_import_script_file, choose_item_index, choose_script_file, show_error, show_info
 from gui.widgets import (
     FluidListFrame,
     FluidListRowsFrame,
@@ -127,6 +128,7 @@ class MainWindow:
         toolbar = ttk.Frame(main)
         toolbar.pack(fill=tk.X)
         ttk.Button(toolbar, text="选择 item_index.json", command=self._choose_index).pack(side=tk.LEFT)
+        ttk.Button(toolbar, text="导入 .zs", command=self._import_script).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="刷新预览", command=self._refresh_preview).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="复制预览", command=self._copy_preview).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="保存 .zs", command=self._save_script).pack(side=tk.LEFT, padx=4)
@@ -744,6 +746,57 @@ class MainWindow:
         except Exception as exc:
             show_error("保存失败", str(exc))
 
+    def _import_script(self):
+        path = choose_import_script_file(self.root, self.config.script_output_dir)
+        if not path:
+            return
+        try:
+            draft = parse_zs_script(Path(path).read_text(encoding="utf-8-sig"))
+            self._load_draft(draft)
+            self.config.script_output_dir = str(Path(path).parent)
+            self.status_var.set(f"已导入 {Path(path).name}，可以继续编辑")
+        except Exception as exc:
+            show_error("导入失败", str(exc))
+
+    def _load_draft(self, draft: RecipeDraft):
+        self._clear_all_slots()
+        self.recipe_kind.set(draft.kind)
+        self.remove_mode.set(remove_mode_label(draft.remove_mode))
+        self.template_id.set(draft.template_id or "generic_gt_machine")
+        self.recipe_map.set(recipe_map_label(draft.recipe_map or self._default_recipe_map(self.template_id.get())))
+        self.xp_var.set(str(draft.xp))
+        self.include_furnace_xp.set(bool(draft.include_furnace_xp))
+        self.shaped_mirrored.set(bool(draft.shaped_mirrored))
+        self.fuel_ticks_var.set(str(draft.fuel_ticks))
+        self.duration_var.set(str(draft.duration))
+        self.eut_var.set(str(draft.eut))
+        self.special_value_var.set("" if draft.special_value is None else str(draft.special_value))
+        self.special_item = draft.special_item
+        self.special_item_var.set("" if draft.special_item is None else draft.special_item.to_zs())
+        self.no_fluid_inputs.set(bool(draft.no_fluid_inputs))
+        self.no_fluid_outputs.set(bool(draft.no_fluid_outputs))
+        self._show_slot_editor(draft.kind)
+        self._set_grid_items(self.active_input_grid, draft.item_inputs)
+        self._set_grid_items(self.active_output_grid, draft.item_outputs)
+        self._set_output_chances(draft.output_chances)
+        self.fluid_inputs.set_fluids(draft.fluid_inputs if draft.kind != "remove" else [])
+        self.fluid_outputs.set_fluids(draft.fluid_outputs)
+        self.remove_fluid_inputs.set_fluids(draft.fluid_inputs if draft.kind == "remove" and draft.remove_mode == "machine" else [])
+        self._update_parameter_visibility()
+        self._refresh_preview()
+
+    def _set_grid_items(self, grid: SlotGridFrame | None, items: list[ScriptItem | None]):
+        if grid is None:
+            return
+        for slot, item in zip(grid.slots, items):
+            slot.set_item(item)
+
+    def _set_output_chances(self, chances: list[int]):
+        if self.recipe_kind.get() != "machine" or self.active_output_grid is None:
+            return
+        for slot, chance in zip([slot for slot in self.active_output_grid.slots if slot.item is not None], chances):
+            slot.output_chance = chance
+
     def _clear_slots(self):
         if self.active_input_grid:
             self.active_input_grid.clear()
@@ -753,6 +806,18 @@ class MainWindow:
         self._sync_selected_item_options()
         self._refresh_preview()
         self.status_var.set("已清空配方格")
+
+    def _clear_all_slots(self):
+        for input_grid, output_grid in self.slot_editors.values():
+            input_grid.clear()
+            output_grid.clear()
+        self.fluid_inputs.set_fluids([])
+        self.fluid_outputs.set_fluids([])
+        self.remove_fluid_inputs.set_fluids([])
+        self.selected_slot = None
+        self.special_item = None
+        self.special_item_var.set("")
+        self._sync_selected_item_options()
 
     def _on_close(self):
         self.config.window_geometry = self.root.geometry()

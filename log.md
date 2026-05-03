@@ -1,5 +1,23 @@
 # Development Log
 
+## 2026-05-03: ZS 导入继续编辑 MVP
+
+### Completed
+- 新增 `core.zs_parser.parse_zs_script`，可解析第一条受支持的 `.zs` 配方。
+- 支持导入本工具生成的 GTNH RA2 builder、GT `RecipeRemover.remove(...)`、有序/镜像有序/无序合成、熔炉、燃料和删除脚本。
+- 工具栏新增“导入 .zs”，读取脚本后将 `RecipeDraft` 填回当前 GUI 草稿。
+- 导入后可继续编辑物品格、流体、`Recipe Map`、`Duration`、`EU/t`、输出概率等参数。
+- 补充 parser 和 GUI 回填测试，覆盖关闭后重新导入继续编辑的场景。
+
+### Issues Encountered
+- **已有脚本不是结构化存档**：`.zs` 可能包含任意 ZenScript → MVP 只做静态解析，不执行脚本，只恢复第一条匹配的受支持配方。
+- **真实脚本存在 `<ore:...>*0` 无空格写法**：数量解析不能依赖 ` * ` 固定空格 → parser 支持紧贴的 `*0`。
+
+### Decisions Made
+- 先不做多配方列表；导入完整脚本时只取第一条受支持配方，后续再做多草稿选择。
+
+---
+
 ## 2026-05-03: GT 删除配方多流体输入
 
 ### Completed

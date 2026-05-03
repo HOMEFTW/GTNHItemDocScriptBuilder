@@ -339,6 +339,13 @@ class FluidListFrame(ttk.LabelFrame):
     def set_fluid(self, entry: FluidEntry):
         self.name_var.set(entry.ct_expression)
 
+    def set_fluids(self, fluids: List[ScriptFluid]):
+        if not fluids:
+            self.clear()
+            return
+        self.name_var.set(fluids[0].name_or_expression)
+        self.amount_var.set(str(fluids[0].amount))
+
     def clear(self):
         self.name_var.set("")
 
@@ -410,6 +417,13 @@ class FluidListRowsFrame(ttk.LabelFrame):
     def set_search_enabled(self, enabled: bool):
         for row in self.rows:
             row.set_search_enabled(enabled)
+
+    def set_fluids(self, fluids: List[ScriptFluid]):
+        for row, fluid in zip(self.rows, fluids):
+            row.name_var.set(fluid.name_or_expression)
+            row.amount_var.set(str(fluid.amount))
+        for row in self.rows[len(fluids) :]:
+            row.clear()
 
     def fluids(self) -> List[ScriptFluid]:
         return [fluid for row in self.rows if (fluid := row.fluid()) is not None]

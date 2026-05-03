@@ -4,7 +4,7 @@
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
 - [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`.
-- [ ] Add import/parse support for existing `.zs` scripts so complete scripts like `ZZZ-NxerCustoms.zs` can seed GUI drafts.
+- [ ] Add a multi-draft import list for complete scripts like `ZZZ-NxerCustoms.zs`, so multiple parsed recipes can be selected one by one.
 
 ## Notes From `D:\Code\ZZZ-NxerCustoms.zs`
 
@@ -39,6 +39,7 @@
 
 - [x] 给中间编辑栏增加竖向滚动条，参数和格子过多时可向下滚动查看。
 - [x] 完善 GT `RecipeRemover.remove(...)` 编辑器：物品输入使用 16 格，流体输入使用独立 4 行列表并支持搜索和数量。
+- [x] 增加 `.zs` 导入继续编辑 MVP：可解析本工具生成的 RA2、GT 删除、合成、熔炉和燃料脚本并填回当前 GUI 草稿。
 - [x] 将 GTNH/模组机器输出格从 4 格调整为 9 格，匹配 GT 输出 UI。
 - [x] 增加 RA2 `.specialItem(...)` 支持，可从当前选中的物品格复制物品、数量和后缀。
 - [x] 增加 RA2 `.specialValue(...)` 支持，GT 机器参数区可填写整数 special value。

@@ -1,0 +1,85 @@
+import unittest
+
+from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
+from core.zs_generator import ZsGenerator
+from core.zs_parser import parse_zs_script
+
+
+class ZsParserTest(unittest.TestCase):
+    def setUp(self):
+        self.generator = ZsGenerator()
+
+    def item(self, expression, amount=1, suffix=""):
+        return ScriptItem(expression=expression, amount=amount, suffix=suffix)
+
+    def test_parses_generated_gt_machine_recipe_for_reediting(self):
+        draft = RecipeDraft(
+            kind="machine",
+            recipe_map="gt.recipe.largechemicalreactor",
+            item_inputs=[self.item("<gregtech:gt.integrated_circuit:21>", 0)],
+            item_outputs=[self.item("<minecraft:bucket>"), self.item("<minecraft:gold_nugget>")],
+            output_chances=[10000, 2500],
+            fluid_inputs=[ScriptFluid("water", 1000)],
+            fluid_outputs=[],
+            special_value=42,
+            duration=320,
+            eut=120,
+        )
+
+        parsed = parse_zs_script(self.generator.generate(draft))
+
+        self.assertEqual("machine", parsed.kind)
+        self.assertEqual("gt.recipe.largechemicalreactor", parsed.recipe_map)
+        self.assertEqual("<gregtech:gt.integrated_circuit:21>", parsed.item_inputs[0].expression)
+        self.assertEqual(0, parsed.item_inputs[0].amount)
+        self.assertEqual("<minecraft:gold_nugget>", parsed.item_outputs[1].expression)
+        self.assertEqual([10000, 2500], parsed.output_chances)
+        self.assertEqual("<liquid:water> * 1000", parsed.fluid_inputs[0].to_zs())
+        self.assertEqual(42, parsed.special_value)
+        self.assertEqual(320, parsed.duration)
+        self.assertEqual(120, parsed.eut)
+
+    def test_parses_gt_recipe_remover_for_reediting_after_restart(self):
+        script = (
+            'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", '
+            "[<minecraft:piston>, <ore:stickWood>*0], "
+            "[<liquid:water> * 1000, <liquid:chlorine> * 144]);"
+        )
+
+        parsed = parse_zs_script(script)
+
+        self.assertEqual("remove", parsed.kind)
+        self.assertEqual("machine", parsed.remove_mode)
+        self.assertEqual("gt.recipe.assembler", parsed.recipe_map)
+        self.assertEqual("<minecraft:piston>", parsed.item_inputs[0].expression)
+        self.assertEqual("<ore:stickWood>", parsed.item_inputs[1].expression)
+        self.assertEqual(0, parsed.item_inputs[1].amount)
+        self.assertEqual("<liquid:water> * 1000", parsed.fluid_inputs[0].to_zs())
+        self.assertEqual("<liquid:chlorine> * 144", parsed.fluid_inputs[1].to_zs())
+
+    def test_parses_generated_minetweaker_recipes(self):
+        shaped = parse_zs_script(
+            "recipes.addShapedMirrored(<minecraft:chest>, [\n"
+            "    [<minecraft:planks>, <minecraft:planks>, <minecraft:planks>],\n"
+            "    [<minecraft:planks>, null, <minecraft:planks>],\n"
+            "    [<minecraft:planks>, <minecraft:planks>, <minecraft:planks>]\n"
+            "]);"
+        )
+        shapeless = parse_zs_script("recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);")
+        furnace = parse_zs_script("furnace.addRecipe(<minecraft:glass>, <minecraft:sand>, 0.5);")
+        fuel = parse_zs_script("furnace.setFuel(<minecraft:coal>, 1600);")
+
+        self.assertEqual("shaped", shaped.kind)
+        self.assertTrue(shaped.shaped_mirrored)
+        self.assertEqual(9, len(shaped.item_inputs))
+        self.assertIsNone(shaped.item_inputs[4])
+        self.assertEqual("shapeless", shapeless.kind)
+        self.assertEqual(4, shapeless.item_outputs[0].amount)
+        self.assertEqual("furnace", furnace.kind)
+        self.assertEqual(0.5, furnace.xp)
+        self.assertEqual("fuel", fuel.kind)
+        self.assertEqual(1600, fuel.fuel_ticks)
+
+
+if __name__ == "__main__":
+    unittest.main()

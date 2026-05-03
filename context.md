@@ -25,6 +25,7 @@
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |
 | GT 删除流体输入 | `gui.widgets.FluidListRowsFrame` | 已支持 4 行流体输入，每行可搜索、填写数量和清空 |
 | OreDict 搜索 | `gui.widgets.OreDictionarySearchDialog` | 已支持 `<ore:...>` 搜索并填入当前输入格 |
+| ZS 导入 | `core.zs_parser.parse_zs_script` + `MainWindow._load_draft` | 已支持导入第一条受支持配方并恢复到当前 GUI 草稿 |
 
 ### Layout Contract
 - 左侧搜索栏固定宽度：`SEARCH_PANE_WIDTH = 580`
@@ -49,6 +50,7 @@
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
 | GT RecipeRemover | 已支持 `RecipeRemover.remove(recipeMap, itemInputs, fluidInputs)`，物品输入来自 16 格，流体输入来自独立 4 行列表 |
 | GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、outputChances、specialValue、specialItem、duration、EU/t、recipe map、无流体输入/输出开关 |
+| `.zs` import/re-edit | 已支持本工具生成的 RA2、GT 删除、合成、熔炉、燃料脚本导入回填 |
 | Ore dictionary inputs | 已支持输入格填入 |
 | Item amount `*0` | 已支持 |
 | Item suffix / NBT `.withTag(...)` | 已支持原样拼接 |
@@ -68,3 +70,4 @@
 - RA2 `specialItem` 复制现有 `ScriptItem`，保留数量 `*0` 和 `.withTag(...)` 后缀。
 - 当前 Addon 源码 `RA2Builder.java` 暴露了 `noFluidInputs()` / `noFluidOutputs()`；Wiki 提到的 `noOptimize()` 未在当前源码中找到，暂不生成。
 - GT 删除模式不复用普通机器流体输入控件，避免只有一条流体输入；`FluidListRowsFrame` 专门服务 `RecipeRemover.remove(...)` 的流体数组参数。
+- `.zs` 导入是 MVP 级静态解析：不执行 ZenScript，只解析第一条匹配的受支持配方，目标是让保存后的脚本在程序重启后能导入继续编辑。
