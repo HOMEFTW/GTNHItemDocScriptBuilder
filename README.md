@@ -28,6 +28,8 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，GTNH/模组机器为 16 个物品输入加 4 个物品输出。机器模板支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
 
+删除模式下会显示“删除类型”子选项，可选择有序、无序、熔炉或 GT，并切换到对应的独立配方格界面。
+
 GTNH/模组机器模式下，“模板”下方有 `Recipe Map` 下拉框。列表来自 Wiki 的 `Available recipe maps`，界面会显示中文名和原 ID，例如 `组装机 (gt.recipe.assembler)`；选择后会覆盖模板默认 recipe map，生成脚本时仍使用括号中的原 ID。
 
 ```zenscript

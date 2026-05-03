@@ -5,7 +5,13 @@ from tkinter import ttk
 
 from core.fluid_index import FluidEntry, FluidIndexStore, default_fluid_index_path
 from core.item_index import ItemEntry, ItemIndexStore
-from core.recipe_layout import LAYOUTS
+from core.recipe_layout import (
+    LAYOUTS,
+    layout_key_for,
+    remove_mode_id_from_label,
+    remove_mode_label,
+    remove_mode_label_options,
+)
 from core.recipe_model import RecipeDraft, ScriptItem
 from core.script_project import AppConfig, save_script
 from core.templates import (
@@ -46,7 +52,7 @@ class MainWindow:
         self.xp_var = tk.StringVar(value="0.0")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
-        self.remove_mode = tk.StringVar(value="all")
+        self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
         self._create_widgets()
         self._try_load_default_index()
@@ -149,14 +155,17 @@ class MainWindow:
         ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
         ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
-        ttk.Label(params, text="删除模式:").grid(row=5, column=0, sticky=tk.W, pady=2)
-        ttk.Combobox(
+        self.remove_mode_label_widget = ttk.Label(params, text="删除类型:")
+        self.remove_mode_label_widget.grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.remove_mode_combo = ttk.Combobox(
             params,
             textvariable=self.remove_mode,
-            values=["all", "shaped", "shapeless", "furnace", "machine"],
+            values=remove_mode_label_options(),
             state="readonly",
             width=12,
-        ).grid(row=5, column=1, sticky=tk.W, pady=2)
+        )
+        self.remove_mode_combo.grid(row=5, column=1, sticky=tk.W, pady=2)
+        self.remove_mode_combo.bind("<<ComboboxSelected>>", lambda _event: self._on_remove_mode_selected())
 
         self.fluid_inputs = FluidListFrame(parent, "流体输入", self._choose_fluid, self._refresh_preview)
         self.fluid_inputs.pack(fill=tk.X, pady=4)
@@ -164,6 +173,7 @@ class MainWindow:
         self.fluid_outputs.pack(fill=tk.X, pady=4)
         self._set_fluid_search_enabled(False)
         self._show_slot_editor(self.recipe_kind.get())
+        self._update_remove_options_visibility()
 
     def _create_slot_editors(self, parent):
         for kind, layout in LAYOUTS.items():
@@ -190,9 +200,10 @@ class MainWindow:
     def _show_slot_editor(self, kind: str):
         for frame in self.slot_editor_frames.values():
             frame.pack_forget()
-        frame = self.slot_editor_frames.get(kind) or self.slot_editor_frames["shaped"]
+        layout_key = layout_key_for(kind, self.remove_mode.get())
+        frame = self.slot_editor_frames.get(layout_key) or self.slot_editor_frames["shaped"]
         frame.pack(fill=tk.X)
-        self.active_input_grid, self.active_output_grid = self.slot_editors.get(kind, self.slot_editors["shaped"])
+        self.active_input_grid, self.active_output_grid = self.slot_editors.get(layout_key, self.slot_editors["shaped"])
         self.selected_slot = None
 
     def _choose_index(self):
@@ -242,7 +253,21 @@ class MainWindow:
 
     def _on_recipe_kind_selected(self):
         self._show_slot_editor(self.recipe_kind.get())
+        self._update_remove_options_visibility()
         self._refresh_preview()
+
+    def _on_remove_mode_selected(self):
+        if self.recipe_kind.get() == "remove":
+            self._show_slot_editor("remove")
+        self._refresh_preview()
+
+    def _update_remove_options_visibility(self):
+        if self.recipe_kind.get() == "remove":
+            self.remove_mode_label_widget.grid()
+            self.remove_mode_combo.grid()
+        else:
+            self.remove_mode_label_widget.grid_remove()
+            self.remove_mode_combo.grid_remove()
 
     def _on_template_selected(self):
         self.recipe_map.set(recipe_map_label(self._default_recipe_map(self.template_id.get())))
@@ -291,7 +316,7 @@ class MainWindow:
             duration=int(self.duration_var.get() or "0"),
             eut=int(self.eut_var.get() or "0"),
             xp=float(self.xp_var.get() or "0"),
-            remove_mode=self.remove_mode.get(),
+            remove_mode=remove_mode_id_from_label(self.remove_mode.get()),
             template_id=self.template_id.get(),
             recipe_map=recipe_map_id_from_label(self.recipe_map.get()),
         )
