@@ -21,7 +21,7 @@ LAYOUTS = {
     "remove_shapeless": RecipeLayout("删除无序配方输入格 3 x 3", 9, 3, "删除目标输出格", 1, 1),
     "remove_furnace": RecipeLayout("删除熔炉输入格", 1, 1, "删除目标输出格", 1, 1),
     "remove_machine": RecipeLayout("删除 GT 配方输入格 16 格", 16, 4, "删除 GT 目标输出格 4 格", 4, 4),
-    "machine": RecipeLayout("机器输入格 16 格", 16, 4, "机器输出格 4 格", 4, 4),
+    "machine": RecipeLayout("机器输入格 16 格", 16, 4, "机器输出格 9 格", 9, 3),
 }
 
 REMOVE_MODE_LABELS = {

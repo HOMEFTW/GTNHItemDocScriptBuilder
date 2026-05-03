@@ -30,8 +30,8 @@ class RecipeLayoutTest(unittest.TestCase):
         layout = layout_for_kind("machine")
         self.assertEqual(16, layout.input_count)
         self.assertEqual(4, layout.input_columns)
-        self.assertEqual(4, layout.output_count)
-        self.assertEqual(4, layout.output_columns)
+        self.assertEqual(9, layout.output_count)
+        self.assertEqual(3, layout.output_columns)
 
     def test_remove_sub_modes_pick_matching_layouts(self):
         self.assertEqual("remove_shaped", layout_key_for("remove", "shaped"))

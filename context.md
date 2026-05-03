@@ -19,7 +19,7 @@
 | Area | Implementation | Status |
 |------|----------------|--------|
 | 左侧物品搜索 | `gui.widgets.ItemSearchFrame` | 已支持中文名、英文名、注册 ID 搜索，并带横向滚动条 |
-| 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、燃料、删除、GTNH/模组机器布局 |
+| 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、燃料、删除、GTNH/模组机器布局；GT 机器为 16 输入 + 9 输出 |
 | 选中物品格编辑 | `gui.main_window.MainWindow` | 已支持数量 `0`、`.withTag(...)` 后缀，以及 GT 机器输出概率 |
 | 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已支持横向和竖向滚动条 |
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |

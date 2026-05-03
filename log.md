@@ -1,5 +1,20 @@
 # Development Log
 
+## 2026-05-03: GT 机器输出格调整为 9 格
+
+### Completed
+- 将 `machine` 布局的物品输出格从 4 格改为 9 格。
+- 输出格排列改为 `3 x 3`，标题改为“机器输出格 9 格”。
+- 更新布局测试，继续保留 GT 删除布局的 4 个目标输出格。
+
+### Issues Encountered
+- **GT 实际输出 UI 是 9 格**：原 GUI 只给 4 个输出格，无法覆盖更多输出配方 → 扩展机器配方输出布局。
+
+### Decisions Made
+- 只调整 `machine` 配方布局；`remove_machine` 仍保持 4 个目标输出格，避免改变现有删除编辑语义。
+
+---
+
 ## 2026-05-03: RA2 Special Item 支持
 
 ### Completed
