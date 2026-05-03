@@ -2,7 +2,7 @@ import tkinter as tk
 import unittest
 
 from core.ore_dictionary_index import OreDictionaryIndexStore
-from gui.widgets import FluidListFrame, ItemSearchFrame, OreDictionarySearchDialog, PreviewFrame
+from gui.widgets import FluidListFrame, FluidListRowsFrame, ItemSearchFrame, OreDictionarySearchDialog, PreviewFrame
 
 
 class ItemSearchFrameTest(unittest.TestCase):
@@ -33,6 +33,19 @@ class FluidListFrameTest(unittest.TestCase):
 
         self.assertEqual(1, frame.amount_entry.grid_info()["row"])
         self.assertEqual("ew", str(frame.fluid_entry.grid_info()["sticky"]).lower())
+
+    def test_multi_row_frame_returns_all_filled_fluids(self):
+        frame = FluidListRowsFrame(self.root, "GT 删除流体输入", 4, lambda _target: None, lambda: None)
+
+        frame.rows[0].name_var.set("<liquid:water>")
+        frame.rows[0].amount_var.set("1000")
+        frame.rows[2].name_var.set("chlorine")
+        frame.rows[2].amount_var.set("144")
+
+        fluids = frame.fluids()
+        self.assertEqual(2, len(fluids))
+        self.assertEqual("<liquid:water> * 1000", fluids[0].to_zs())
+        self.assertEqual("<liquid:chlorine> * 144", fluids[1].to_zs())
 
 
 class PreviewFrameTest(unittest.TestCase):

@@ -226,8 +226,34 @@ class MainWindowLayoutTest(unittest.TestCase):
             window._on_remove_mode_selected()
             self.assertTrue(window.template_label_widget.grid_info())
             self.assertTrue(window.recipe_map_label_widget.grid_info())
-            self.assertEqual("pack", window.fluid_inputs.winfo_manager())
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+            self.assertEqual("pack", window.remove_fluid_inputs.winfo_manager())
             self.assertFalse(window.fluid_outputs.winfo_manager())
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_gt_remove_uses_dedicated_multi_fluid_inputs(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            window.recipe_kind.set("remove")
+            window.remove_mode.set("GT")
+            window._on_recipe_kind_selected()
+            window.active_input_grid.slots[0].set_item(ScriptItem("<minecraft:piston>"))
+            window.remove_fluid_inputs.rows[0].name_var.set("<liquid:water>")
+            window.remove_fluid_inputs.rows[0].amount_var.set("1000")
+            window.remove_fluid_inputs.rows[1].name_var.set("chlorine")
+            window.remove_fluid_inputs.rows[1].amount_var.set("144")
+
+            draft = window._draft()
+
+            self.assertEqual("machine", draft.remove_mode)
+            self.assertEqual(2, len(draft.fluid_inputs))
+            self.assertIn("<liquid:water> * 1000", window.generator.generate(draft))
+            self.assertIn("<liquid:chlorine> * 144", window.generator.generate(draft))
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():

@@ -40,11 +40,11 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 
 点击任意物品格后，中间的“选中物品格”区域可以编辑数量和后缀。数量允许 `0`，用于 GT 编程电路或模具这类 `<...> * 0` 输入；后缀会直接拼接到物品表达式之后，可填写 `.withTag(...)` 这类 NBT 表达式。GTNH/模组机器模式下选中输出格时，还可以填写“输出概率”，单位为 GT 常用的 `10000 = 100%`，会生成 RA2 的 `.outputChances([...])`。
 
-删除模式下会显示“删除类型”子选项，可选择有序、无序、熔炉或 GT，并切换到对应的独立配方格界面。
+删除模式下会显示“删除类型”子选项，可选择有序、无序、熔炉或 GT，并切换到对应的独立配方格界面。GT 删除使用 16 个物品输入格作为 `RecipeRemover.remove(...)` 的物品输入数组，并提供独立的“GT 删除流体输入”多行列表，每行都可搜索流体、填写数量或清空。
 
 参数区提供 MineTweaker 常用选项：“镜像有序合成”会让有序合成生成 `recipes.addShapedMirrored(...)`；“写入熔炉 XP”关闭后，熔炉配方会生成两参数写法 `furnace.addRecipe(output, input);`；“燃烧时间”用于燃料模式生成 `furnace.setFuel(item, ticks);`。
 
-参数和流体区会按脚本类型显示：有序/无序合成不显示流体，熔炉只显示 XP，燃料只显示燃烧时间，GTNH/模组机器显示模板、`Recipe Map`、`Duration`、`EU/t`、无流体开关和流体输入/输出。删除模式只有选择 `GT` 时才显示 `Recipe Map` 和流体输入。
+参数和流体区会按脚本类型显示：有序/无序合成不显示流体，熔炉只显示 XP，燃料只显示燃烧时间，GTNH/模组机器显示模板、`Recipe Map`、`Duration`、`EU/t`、无流体开关和流体输入/输出。删除模式只有选择 `GT` 时才显示 `Recipe Map` 和专用的 GT 删除流体输入列表。
 
 GTNH/模组机器参数区的 `Special Value` 默认留空，不生成脚本；填入整数后会生成 `.specialValue(value)`。
 
@@ -64,10 +64,16 @@ mods.gregtech.RA2
     .addTo("gt.recipe.assembler");
 ```
 
-删除 GT 机器配方时可在“删除模式”选择 `machine`，会生成：
+删除 GT 机器配方时可在“删除模式”选择 `GT`，会生成：
 
 ```zenscript
 mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <minecraft:slime_ball>], []);
+```
+
+如果填写多条 GT 删除流体输入，会生成同一个流体数组参数：
+
+```zenscript
+mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>], [<liquid:water> * 1000, <liquid:chlorine> * 144]);
 ```
 
 ## 打包

@@ -30,6 +30,7 @@ from core.zs_generator import ZsGenerator
 from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
 from gui.widgets import (
     FluidListFrame,
+    FluidListRowsFrame,
     FluidSearchDialog,
     ItemSearchFrame,
     OreDictionarySearchDialog,
@@ -327,6 +328,14 @@ class MainWindow:
         self.fluid_inputs.pack(fill=tk.X, pady=4)
         self.fluid_outputs = FluidListFrame(parent, "流体输出", self._choose_fluid, self._refresh_preview)
         self.fluid_outputs.pack(fill=tk.X, pady=4)
+        self.remove_fluid_inputs = FluidListRowsFrame(
+            parent,
+            "GT 删除流体输入",
+            4,
+            self._choose_fluid,
+            self._refresh_preview,
+        )
+        self.remove_fluid_inputs.pack(fill=tk.X, pady=4)
         self._set_fluid_search_enabled(False)
         self._show_slot_editor(self.recipe_kind.get())
         self._update_parameter_visibility()
@@ -499,9 +508,11 @@ class MainWindow:
     def _update_fluid_visibility(self):
         kind = self.recipe_kind.get()
         remove_mode = remove_mode_id_from_label(self.remove_mode.get())
-        show_inputs = kind == "machine" or (kind == "remove" and remove_mode == "machine")
+        show_inputs = kind == "machine"
+        show_remove_inputs = kind == "remove" and remove_mode == "machine"
         show_outputs = kind == "machine"
         self._set_pack_visible(self.fluid_inputs, show_inputs)
+        self._set_pack_visible(self.remove_fluid_inputs, show_remove_inputs)
         self._set_pack_visible(self.fluid_outputs, show_outputs)
 
     def _update_parameter_visibility(self):
@@ -649,6 +660,8 @@ class MainWindow:
             self.fluid_inputs.set_search_enabled(enabled)
         if hasattr(self, "fluid_outputs"):
             self.fluid_outputs.set_search_enabled(enabled)
+        if hasattr(self, "remove_fluid_inputs"):
+            self.remove_fluid_inputs.set_search_enabled(enabled)
 
     def _set_ore_dictionary_search_enabled(self, enabled: bool):
         if hasattr(self, "ore_dictionary_button"):
@@ -657,12 +670,15 @@ class MainWindow:
     def _draft(self) -> RecipeDraft:
         input_grid = self.active_input_grid or self.slot_editors["shaped"][0]
         output_grid = self.active_output_grid or self.slot_editors["shaped"][1]
+        kind = self.recipe_kind.get()
+        remove_mode = remove_mode_id_from_label(self.remove_mode.get())
+        fluid_inputs = self.remove_fluid_inputs.fluids() if kind == "remove" and remove_mode == "machine" else self.fluid_inputs.fluids()
         return RecipeDraft(
-            kind=self.recipe_kind.get(),
+            kind=kind,
             item_inputs=input_grid.items(),
             item_outputs=output_grid.items(),
             output_chances=self._output_chances(output_grid),
-            fluid_inputs=self.fluid_inputs.fluids(),
+            fluid_inputs=fluid_inputs,
             fluid_outputs=self.fluid_outputs.fluids(),
             duration=int(self.duration_var.get() or "0"),
             eut=int(self.eut_var.get() or "0"),

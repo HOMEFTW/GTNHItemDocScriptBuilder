@@ -239,6 +239,20 @@ class ZsGeneratorTest(unittest.TestCase):
             self.generator.generate(draft).strip(),
         )
 
+    def test_generates_gt_remove_mode_with_multiple_fluid_inputs(self):
+        draft = RecipeDraft(
+            kind="remove",
+            remove_mode="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:piston>"), self.item("<ore:stickWood>")],
+            fluid_inputs=[ScriptFluid("<liquid:water>", 1000), ScriptFluid("chlorine", 144)],
+        )
+
+        self.assertEqual(
+            'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <ore:stickWood>], [<liquid:water> * 1000, <liquid:chlorine> * 144]);',
+            self.generator.generate(draft).strip(),
+        )
+
     def test_recipe_maps_include_wiki_values(self):
         self.assertIn("gt.recipe.assembler", RECIPE_MAPS)
         self.assertIn("gt.recipe.largechemicalreactor", RECIPE_MAPS)

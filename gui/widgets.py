@@ -347,3 +347,69 @@ class FluidListFrame(ttk.LabelFrame):
         if not name:
             return []
         return [ScriptFluid(name, int(self.amount_var.get() or "0"))]
+
+
+class FluidRowFrame(ttk.Frame):
+    def __init__(
+        self,
+        parent,
+        index: int,
+        on_search: Callable[["FluidRowFrame"], None],
+        on_change: Callable[[], None],
+    ):
+        super().__init__(parent)
+        self.on_search = on_search
+        self.on_change = on_change
+        self.name_var = tk.StringVar()
+        self.amount_var = tk.StringVar(value="1000")
+        self.name_var.trace_add("write", lambda *_: self.on_change())
+        self.amount_var.trace_add("write", lambda *_: self.on_change())
+        ttk.Label(self, text=f"{index + 1}:").grid(row=0, column=0, sticky=tk.W, padx=(0, 2), pady=2)
+        self.fluid_entry = ttk.Entry(self, textvariable=self.name_var)
+        self.fluid_entry.grid(row=0, column=1, sticky=tk.EW, padx=2, pady=2)
+        ttk.Label(self, text="数量:").grid(row=0, column=2, sticky=tk.W, padx=(4, 2), pady=2)
+        self.amount_entry = ttk.Entry(self, textvariable=self.amount_var, width=8)
+        self.amount_entry.grid(row=0, column=3, sticky=tk.W, padx=2, pady=2)
+        self.search_button = ttk.Button(self, text="搜索", command=lambda: self.on_search(self))
+        self.search_button.grid(row=0, column=4, sticky=tk.W, padx=2, pady=2)
+        ttk.Button(self, text="清空", command=self.clear).grid(row=0, column=5, sticky=tk.W, padx=2, pady=2)
+        self.columnconfigure(1, weight=1)
+
+    def set_search_enabled(self, enabled: bool):
+        self.search_button.configure(state=tk.NORMAL if enabled else tk.DISABLED)
+
+    def set_fluid(self, entry: FluidEntry):
+        self.name_var.set(entry.ct_expression)
+
+    def clear(self):
+        self.name_var.set("")
+
+    def fluid(self) -> Optional[ScriptFluid]:
+        name = self.name_var.get().strip()
+        if not name:
+            return None
+        return ScriptFluid(name, int(self.amount_var.get() or "0"))
+
+
+class FluidListRowsFrame(ttk.LabelFrame):
+    def __init__(
+        self,
+        parent,
+        text: str,
+        count: int,
+        on_search: Callable[[FluidRowFrame], None],
+        on_change: Callable[[], None],
+    ):
+        super().__init__(parent, text=text, padding=5)
+        self.rows: List[FluidRowFrame] = []
+        for index in range(count):
+            row = FluidRowFrame(self, index, on_search, on_change)
+            row.pack(fill=tk.X, pady=1)
+            self.rows.append(row)
+
+    def set_search_enabled(self, enabled: bool):
+        for row in self.rows:
+            row.set_search_enabled(enabled)
+
+    def fluids(self) -> List[ScriptFluid]:
+        return [fluid for row in self.rows if (fluid := row.fluid()) is not None]

@@ -23,6 +23,7 @@
 | 选中物品格编辑 | `gui.main_window.MainWindow` | 已支持数量 `0`、`.withTag(...)` 后缀，以及 GT 机器输出概率 |
 | 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已支持横向和竖向滚动条 |
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |
+| GT 删除流体输入 | `gui.widgets.FluidListRowsFrame` | 已支持 4 行流体输入，每行可搜索、填写数量和清空 |
 | OreDict 搜索 | `gui.widgets.OreDictionarySearchDialog` | 已支持 `<ore:...>` 搜索并填入当前输入格 |
 
 ### Layout Contract
@@ -46,6 +47,7 @@
 | Furnace recipe | 已支持，可选择是否写入 XP 参数 |
 | Furnace fuel | 已支持，生成 `furnace.setFuel(item, ticks)` |
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
+| GT RecipeRemover | 已支持 `RecipeRemover.remove(recipeMap, itemInputs, fluidInputs)`，物品输入来自 16 格，流体输入来自独立 4 行列表 |
 | GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、outputChances、specialValue、specialItem、duration、EU/t、recipe map、无流体输入/输出开关 |
 | Ore dictionary inputs | 已支持输入格填入 |
 | Item amount `*0` | 已支持 |
@@ -65,3 +67,4 @@
 - RA2 `specialValue` 为可选整数，空值时不生成 `.specialValue(...)`。
 - RA2 `specialItem` 复制现有 `ScriptItem`，保留数量 `*0` 和 `.withTag(...)` 后缀。
 - 当前 Addon 源码 `RA2Builder.java` 暴露了 `noFluidInputs()` / `noFluidOutputs()`；Wiki 提到的 `noOptimize()` 未在当前源码中找到，暂不生成。
+- GT 删除模式不复用普通机器流体输入控件，避免只有一条流体输入；`FluidListRowsFrame` 专门服务 `RecipeRemover.remove(...)` 的流体数组参数。
