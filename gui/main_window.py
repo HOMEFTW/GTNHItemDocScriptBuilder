@@ -77,6 +77,11 @@ class MainWindow:
         self.eut_var = tk.StringVar(value="30")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
+        self.selected_item_amount = tk.StringVar(value="1")
+        self.selected_item_suffix = tk.StringVar(value="")
+        self._syncing_selected_item_options = False
+        self.selected_item_amount.trace_add("write", lambda *_: self._apply_selected_item_options())
+        self.selected_item_suffix.trace_add("write", lambda *_: self._apply_selected_item_options())
         self._create_widgets()
         self._try_load_default_index()
 
@@ -155,6 +160,21 @@ class MainWindow:
         self.slot_area = ttk.Frame(parent)
         self.slot_area.pack(fill=tk.X, pady=4)
         self._create_slot_editors(self.slot_area)
+
+        item_options = ttk.LabelFrame(parent, text="选中物品格", padding=5)
+        item_options.pack(fill=tk.X, pady=4)
+        ttk.Label(item_options, text="数量:").grid(row=0, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        ttk.Entry(item_options, textvariable=self.selected_item_amount, width=8).grid(
+            row=0,
+            column=1,
+            sticky=tk.W,
+            padx=(0, 8),
+            pady=2,
+        )
+        ttk.Label(item_options, text="后缀:").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=2)
+        self.selected_item_suffix_entry = ttk.Entry(item_options, textvariable=self.selected_item_suffix)
+        self.selected_item_suffix_entry.grid(row=0, column=3, sticky=tk.EW, pady=2)
+        item_options.columnconfigure(3, weight=1)
 
         params = ttk.LabelFrame(parent, text="参数", padding=5)
         params.pack(fill=tk.X)
@@ -236,6 +256,7 @@ class MainWindow:
         frame.pack(fill=tk.X)
         self.active_input_grid, self.active_output_grid = self.slot_editors.get(layout_key, self.slot_editors["shaped"])
         self.selected_slot = None
+        self._sync_selected_item_options()
 
     def _choose_index(self):
         path = choose_item_index(self.root, self.config.item_index_path)
@@ -298,6 +319,7 @@ class MainWindow:
 
     def _select_slot(self, slot: SlotButton):
         self.selected_slot = slot
+        self._sync_selected_item_options()
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
     def _on_recipe_kind_selected(self):
@@ -333,6 +355,7 @@ class MainWindow:
             self.status_var.set("请先点击一个配方格")
             return
         self.selected_slot.set_item(ScriptItem(entry.ct_expression, 1, entry.chinese_name))
+        self._sync_selected_item_options()
         self.status_var.set(f"已填入 {entry.chinese_name or entry.registry_id}")
         self._refresh_preview()
 
@@ -360,7 +383,38 @@ class MainWindow:
             self.status_var.set("OreDict 只能填入配方输入格")
             return
         self.selected_slot.set_item(ScriptItem(entry.ct_expression, 1, "OreDict " + entry.ore_name))
+        self._sync_selected_item_options()
         self.status_var.set(f"已填入 {entry.ct_expression}")
+        self._refresh_preview()
+
+    def _sync_selected_item_options(self):
+        self._syncing_selected_item_options = True
+        try:
+            item = self.selected_slot.item if self.selected_slot else None
+            self.selected_item_amount.set(str(item.amount if item else 1))
+            self.selected_item_suffix.set(item.suffix if item else "")
+        finally:
+            self._syncing_selected_item_options = False
+
+    def _apply_selected_item_options(self):
+        if self._syncing_selected_item_options:
+            return
+        if self.selected_slot is None or self.selected_slot.item is None:
+            return
+        try:
+            amount = int(self.selected_item_amount.get() or "0")
+        except ValueError:
+            self.status_var.set("物品数量必须是整数")
+            return
+        item = self.selected_slot.item
+        self.selected_slot.set_item(
+            ScriptItem(
+                item.expression,
+                amount,
+                item.comment_name,
+                self.selected_item_suffix.get(),
+            )
+        )
         self._refresh_preview()
 
     def _choose_fluid(self, target: FluidListFrame):
@@ -431,6 +485,7 @@ class MainWindow:
         if self.active_output_grid:
             self.active_output_grid.clear()
         self.selected_slot = None
+        self._sync_selected_item_options()
         self._refresh_preview()
         self.status_var.set("已清空配方格")
 

@@ -3,8 +3,6 @@
 ## Next Priorities
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
-- [ ] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
-- [ ] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.
 - [ ] Add RA2 toggles for `.noFluidInputs()` and `.noFluidOutputs()`.
 - [ ] Add RA2 optional fields from the wiki and real scripts: `.outputChances(...)`, `.noOptimize()`, `.specialValue(...)`, `.specialItem(...)`.
 - [ ] Improve `RecipeRemover.remove` editor for multi-line item/fluid input removal.
@@ -55,3 +53,5 @@
 - [x] Add vertical and horizontal scrollbars to the ZS preview panel.
 - [x] Prevent the preview scrollbars from expanding the preview pane and squeezing the editor.
 - [x] Support ore dictionary expressions such as `<ore:stickWood>` and `<ore:dustClay>` as first-class selectable inputs.
+- [x] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
+- [x] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.

@@ -8,10 +8,11 @@ class ScriptItem:
     expression: str
     amount: int = 1
     comment_name: str = ""
+    suffix: str = ""
 
     def to_zs(self) -> str:
-        base = self.expression.strip()
-        if self.amount and self.amount > 1:
+        base = self.expression.strip() + self.suffix.strip()
+        if self.amount != 1:
             return f"{base} * {self.amount}"
         return base
 

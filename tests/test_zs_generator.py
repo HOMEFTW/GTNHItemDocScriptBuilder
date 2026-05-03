@@ -9,8 +9,8 @@ class ZsGeneratorTest(unittest.TestCase):
     def setUp(self):
         self.generator = ZsGenerator()
 
-    def item(self, expression, amount=1):
-        return ScriptItem(expression=expression, amount=amount, comment_name="")
+    def item(self, expression, amount=1, suffix=""):
+        return ScriptItem(expression=expression, amount=amount, comment_name="", suffix=suffix)
 
     def test_generates_shaped_recipe(self):
         draft = RecipeDraft(
@@ -41,6 +41,30 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertEqual(
             "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);",
             self.generator.generate(draft).strip(),
+        )
+
+    def test_generates_gt_recipe_with_zero_count_input(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<gregtech:gt.integrated_circuit:21>", 0)],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+        self.assertIn(".itemInputs([<gregtech:gt.integrated_circuit:21> * 0])", script)
+
+    def test_generates_item_with_nbt_suffix_before_amount(self):
+        item = self.item(
+            "<appliedenergistics2:item.ItemMultiMaterial:47>",
+            2,
+            ".withTag({baseCapacity: 4611686018427385856 as long})",
+        )
+
+        self.assertEqual(
+            "<appliedenergistics2:item.ItemMultiMaterial:47>.withTag({baseCapacity: 4611686018427385856 as long}) * 2",
+            item.to_zs(),
         )
 
     def test_generates_furnace_recipe(self):

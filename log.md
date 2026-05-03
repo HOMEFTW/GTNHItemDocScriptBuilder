@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-05-03: 物品数量和 NBT 后缀支持
+
+### Completed
+- 为 `ScriptItem` 增加 `suffix` 字段，生成脚本时会拼接到物品表达式后，再追加数量。
+- 调整物品数量生成逻辑，允许 `amount = 0` 输出 `<...> * 0`，用于 GT 编程电路和模具。
+- 在中间编辑区增加“选中物品格”控件，可编辑当前格子的数量和 `.withTag(...)` 等后缀。
+- 补充 `*0`、NBT 后缀和 GUI 选中格编辑行为测试。
+
+### Issues Encountered
+- **旧逻辑把 `0` 当作未设置数量**：`if self.amount and self.amount > 1` 会吞掉 `0` → 改为 `amount != 1` 时输出数量。
+
+### Decisions Made
+- 后缀只做原样拼接：GUI 不解析 NBT 内容，避免破坏 CraftTweaker 的原始表达式。
+- 数量和后缀编辑放在中间栏内部：不改变左侧 `580px` 和右侧 `400px` 的固定比例。
+
+---
+
 ## 2026-05-03: OreDict GUI 适配
 
 ### Completed

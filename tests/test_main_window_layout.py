@@ -1,6 +1,7 @@
 import unittest
 
 from core.ore_dictionary_index import OreDictionaryEntry
+from core.recipe_model import ScriptItem
 from gui.main_window import (
     EDITOR_PANE_WEIGHT,
     MIN_WINDOW_SIZE,
@@ -56,6 +57,27 @@ class MainWindowLayoutTest(unittest.TestCase):
 
             self.assertEqual("<ore:stickWood>", slot.item.expression)
             self.assertEqual("<ore:stickWood>", slot.cget("text"))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_selected_slot_options_apply_zero_amount_and_suffix(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            slot = window.active_input_grid.slots[0]
+            slot.set_item(ScriptItem("<gregtech:gt.integrated_circuit:21>"))
+            window._select_slot(slot)
+
+            window.selected_item_amount.set("0")
+            window.selected_item_suffix.set(".withTag({foo: 1})")
+            window._apply_selected_item_options()
+
+            self.assertEqual(0, slot.item.amount)
+            self.assertEqual(".withTag({foo: 1})", slot.item.suffix)
+            self.assertEqual("<gregtech:gt.integrated_circuit:21>.withTag({foo: 1}) * 0", slot.cget("text"))
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():
