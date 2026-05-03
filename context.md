@@ -21,11 +21,11 @@
 | 左侧物品搜索 | `gui.widgets.ItemSearchFrame` | 已支持中文名、英文名、注册 ID 搜索，并带横向滚动条 |
 | 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、燃料、删除、GTNH/模组机器布局；GT 机器为 16 输入 + 9 输出 |
 | 选中物品格编辑 | `gui.main_window.MainWindow` | 已支持数量 `0`、`.withTag(...)` 后缀，以及 GT 机器输出概率 |
-| 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已分为上下两半：完整 `.zs` 文件原文和当前草稿保存内容，两区均有横向和竖向滚动条 |
+| 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已分为上下两半：完整 `.zs` 文件编辑区和当前草稿保存内容，两区均有横向和竖向滚动条 |
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |
 | GT 删除流体输入 | `gui.widgets.FluidListRowsFrame` | 已支持 4 行流体输入，每行可搜索、填写数量和清空 |
 | OreDict 搜索 | `gui.widgets.OreDictionarySearchDialog` | 已支持 `<ore:...>` 搜索并填入当前输入格 |
-| ZS 导入 | `core.zs_parser.parse_zs_script` + `MainWindow._load_draft` | 已支持导入第一条受支持配方并恢复到当前 GUI 草稿 |
+| ZS 导入 | `core.zs_parser.parse_zs_script_with_source` + `MainWindow._parse_current_script_to_gui` | 导入只加载完整脚本；点击“解析到GUI”后按当前脚本类型解析并恢复到 GUI 草稿 |
 
 ### Layout Contract
 - 左侧搜索栏固定宽度：`SEARCH_PANE_WIDTH = 580`
@@ -50,7 +50,7 @@
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
 | GT RecipeRemover | 已支持 `RecipeRemover.remove(recipeMap, itemInputs, fluidInputs)`，物品输入来自 16 格，流体输入来自独立 4 行列表 |
 | GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、outputChances、specialValue、specialItem、duration、EU/t、recipe map、无流体输入/输出开关 |
-| `.zs` import/re-edit | 已支持本工具生成的 RA2、GT 删除、合成、熔炉、燃料脚本导入回填 |
+| `.zs` import/re-edit | 已支持本工具生成的 RA2、GT 删除、合成、熔炉、燃料脚本按当前脚本类型手动解析回填 |
 | Ore dictionary inputs | 已支持输入格填入 |
 | Item amount `*0` | 已支持 |
 | Item suffix / NBT `.withTag(...)` | 已支持原样拼接 |
@@ -70,7 +70,8 @@
 - RA2 `specialItem` 复制现有 `ScriptItem`，保留数量 `*0` 和 `.withTag(...)` 后缀。
 - 当前 Addon 源码 `RA2Builder.java` 暴露了 `noFluidInputs()` / `noFluidOutputs()`；Wiki 提到的 `noOptimize()` 未在当前源码中找到，暂不生成。
 - GT 删除模式不复用普通机器流体输入控件，避免只有一条流体输入；`FluidListRowsFrame` 专门服务 `RecipeRemover.remove(...)` 的流体数组参数。
-- `.zs` 导入是 MVP 级静态解析：不执行 ZenScript，只解析第一条匹配的受支持配方，目标是让保存后的脚本在程序重启后能导入继续编辑。
+- `.zs` 导入是 MVP 级静态解析：不执行 ZenScript；导入只打开完整文件，点击“解析到GUI”后只按当前脚本类型解析第一条匹配的受支持配方。
 - ZS 预览只代表当前一份草稿；脚本类型切换时会迁移当前格子到新布局，避免隐藏布局恢复旧草稿造成“不同类型不同预览”的错觉。
-- `.zs` 导入按脚本出现顺序选择第一条受支持配方，不再用固定类型优先级抢先解析后面的调用。
-- 右侧上半区保留完整导入文件，右侧下半区显示保存按钮会写出的当前草稿内容，并在标题中显示文件名、受支持配方序号、行号和调用类型。
+- `.zs` 解析按当前脚本类型过滤后，再按脚本出现顺序选择第一条受支持配方，不再让 GT 配方抢走有序/无序解析。
+- 右侧上半区是完整脚本编辑区；“添加到脚本”把当前草稿生成内容追加到上半区；“保存 .zs”保存上半区完整文件。
+- 上半区支持撤销和重做，面向完整脚本编辑。

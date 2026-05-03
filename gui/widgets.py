@@ -152,6 +152,8 @@ class PreviewFrame(ttk.LabelFrame):
             background="#ffffff",
             foreground="#111111",
             insertbackground="#111111",
+            undo=True,
+            maxundo=-1,
         )
         vertical_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text.yview)
         horizontal_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=text.xview)
@@ -169,6 +171,7 @@ class PreviewFrame(ttk.LabelFrame):
     def set_full_text(self, value: str):
         self.full_text.delete("1.0", tk.END)
         self.full_text.insert(tk.END, value)
+        self.full_text.edit_reset()
 
     def get_full_text(self) -> str:
         return self.full_text.get("1.0", tk.END).rstrip()

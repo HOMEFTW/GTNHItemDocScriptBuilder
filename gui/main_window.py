@@ -130,6 +130,12 @@ class MainWindow:
         toolbar.pack(fill=tk.X)
         ttk.Button(toolbar, text="选择 item_index.json", command=self._choose_index).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="导入 .zs", command=self._import_script).pack(side=tk.LEFT, padx=4)
+        ttk.Button(toolbar, text="解析到GUI", command=self._parse_current_script_to_gui).pack(side=tk.LEFT, padx=4)
+        ttk.Button(toolbar, text="添加到脚本", command=self._add_generated_to_script).pack(side=tk.LEFT, padx=4)
+        self.undo_button = ttk.Button(toolbar, text="撤销", command=self._undo_full_script)
+        self.undo_button.pack(side=tk.LEFT, padx=4)
+        self.redo_button = ttk.Button(toolbar, text="重做", command=self._redo_full_script)
+        self.redo_button.pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="刷新预览", command=self._refresh_preview).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="复制预览", command=self._copy_preview).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="保存 .zs", command=self._save_script).pack(side=tk.LEFT, padx=4)
@@ -764,11 +770,14 @@ class MainWindow:
         if not path:
             return
         try:
-            save_script(path, self.preview.get_text())
+            save_script(path, self._save_content())
             self.config.script_output_dir = str(Path(path).parent)
             show_info("保存成功", path)
         except Exception as exc:
             show_error("保存失败", str(exc))
+
+    def _save_content(self) -> str:
+        return self.preview.get_full_text()
 
     def _import_script(self):
         path = choose_import_script_file(self.root, self.config.script_output_dir)
@@ -783,15 +792,60 @@ class MainWindow:
             show_error("导入失败", str(exc))
 
     def _load_script_text(self, script_text: str, filename: str):
-        parsed = parse_zs_script_with_source(script_text)
         self.preview.set_full_text(script_text)
         self.preview.set_full_label(filename)
-        self.current_draft_source = (
-            f"当前草稿: {filename} 第 {parsed.recipe_number} 条受支持配方，"
-            f"行 {parsed.line_number} ({parsed.marker})"
-        )
+        self.current_draft_source = f"当前草稿: {filename} 未解析"
         self.preview.set_source_label(self.current_draft_source)
-        self._load_draft(parsed.draft)
+
+    def _parse_current_script_to_gui(self):
+        try:
+            parsed = parse_zs_script_with_source(self.preview.get_full_text(), self._allowed_parse_kinds())
+            self.current_draft_source = (
+                f"当前草稿: 第 {parsed.recipe_number} 条受支持配方，"
+                f"行 {parsed.line_number} ({parsed.marker})"
+            )
+            self.preview.set_source_label(self.current_draft_source)
+            self._load_draft(parsed.draft)
+            self.status_var.set(self.current_draft_source)
+        except Exception as exc:
+            show_error("解析失败", str(exc))
+
+    def _allowed_parse_kinds(self) -> set[str]:
+        kind = self.recipe_kind.get()
+        if kind != "remove":
+            return {kind}
+        remove_mode = remove_mode_id_from_label(self.remove_mode.get())
+        if remove_mode == "machine":
+            return {"remove_machine"}
+        if remove_mode == "furnace":
+            return {"remove_furnace"}
+        if remove_mode == "shaped":
+            return {"remove_shaped"}
+        if remove_mode == "shapeless":
+            return {"remove_shapeless"}
+        return {"remove_all"}
+
+    def _add_generated_to_script(self):
+        self._refresh_preview()
+        existing = self.preview.get_full_text().rstrip()
+        generated = self.preview.get_text().strip()
+        if not generated:
+            return
+        separator = "\n\n" if existing else ""
+        self.preview.full_text.insert("end-1c", separator + generated)
+        self.status_var.set("已添加当前草稿到完整脚本")
+
+    def _undo_full_script(self):
+        try:
+            self.preview.full_text.edit_undo()
+        except tk.TclError:
+            pass
+
+    def _redo_full_script(self):
+        try:
+            self.preview.full_text.edit_redo()
+        except tk.TclError:
+            pass
 
     def _load_draft(self, draft: RecipeDraft):
         self._clear_all_slots()

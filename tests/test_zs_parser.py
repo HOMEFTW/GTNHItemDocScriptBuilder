@@ -76,6 +76,26 @@ class ZsParserTest(unittest.TestCase):
         self.assertEqual(1, parsed.recipe_number)
         self.assertEqual(1, parsed.line_number)
 
+    def test_parses_only_requested_script_kind(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "mods.gregtech.RA2\n"
+            "    .builder()\n"
+            "    .itemInputs([<minecraft:piston>])\n"
+            "    .itemOutputs([<minecraft:bucket>])\n"
+            "    .fluidInputs([])\n"
+            "    .fluidOutputs([])\n"
+            "    .duration(200)\n"
+            "    .eut(30)\n"
+            "    .addTo(\"gt.recipe.assembler\");"
+        )
+
+        parsed = parse_zs_script_with_source(script, allowed_kinds={"machine"})
+
+        self.assertEqual("machine", parsed.draft.kind)
+        self.assertEqual(2, parsed.recipe_number)
+        self.assertEqual(2, parsed.line_number)
+
     def test_parses_gt_recipe_remover_for_reediting_after_restart(self):
         script = (
             'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", '

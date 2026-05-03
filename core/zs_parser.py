@@ -20,29 +20,32 @@ def parse_zs_script(script: str) -> RecipeDraft:
     return parse_zs_script_with_source(script).draft
 
 
-def parse_zs_script_with_source(script: str) -> ParsedRecipe:
+def parse_zs_script_with_source(script: str, allowed_kinds: set[str] | None = None) -> ParsedRecipe:
     text = script
     candidates = [
-        ("mods.gregtech.RecipeRemover.remove", lambda value: _parse_gt_remover(value)),
-        ("mods.gregtech.RA2", lambda value: _parse_gt_machine(value)),
-        ("furnace.setFuel", lambda value: _parse_fuel(value)),
-        ("furnace.addRecipe", lambda value: _parse_furnace(value)),
-        ("furnace.remove", lambda value: _parse_furnace_remove(value)),
-        ("recipes.addShapedMirrored", lambda value: _parse_shaped(value, mirrored=True)),
-        ("recipes.addShaped", lambda value: _parse_shaped(value, mirrored=False)),
-        ("recipes.addShapeless", lambda value: _parse_shapeless(value)),
-        ("recipes.removeShaped", lambda value: _parse_simple_remove(value, "shaped")),
-        ("recipes.removeShapeless", lambda value: _parse_simple_remove(value, "shapeless")),
-        ("recipes.remove", lambda value: _parse_simple_remove(value, "all")),
+        ("mods.gregtech.RecipeRemover.remove", "remove_machine", lambda value: _parse_gt_remover(value)),
+        ("mods.gregtech.RA2", "machine", lambda value: _parse_gt_machine(value)),
+        ("furnace.setFuel", "fuel", lambda value: _parse_fuel(value)),
+        ("furnace.addRecipe", "furnace", lambda value: _parse_furnace(value)),
+        ("furnace.remove", "remove_furnace", lambda value: _parse_furnace_remove(value)),
+        ("recipes.addShapedMirrored", "shaped", lambda value: _parse_shaped(value, mirrored=True)),
+        ("recipes.addShaped", "shaped", lambda value: _parse_shaped(value, mirrored=False)),
+        ("recipes.addShapeless", "shapeless", lambda value: _parse_shapeless(value)),
+        ("recipes.removeShaped", "remove_shaped", lambda value: _parse_simple_remove(value, "shaped")),
+        ("recipes.removeShapeless", "remove_shapeless", lambda value: _parse_simple_remove(value, "shapeless")),
+        ("recipes.remove", "remove_all", lambda value: _parse_simple_remove(value, "all")),
     ]
     found = []
-    for index, (marker, parser) in enumerate(candidates):
+    for index, (marker, kind, parser) in enumerate(candidates):
         start = 0
         while (position := text.find(marker, start)) >= 0:
-            found.append((position, index, marker, parser))
+            found.append((position, index, marker, kind, parser))
             start = position + len(marker)
     if found:
-        position, _index, marker, parser = min(found)
+        parseable = [candidate for candidate in found if allowed_kinds is None or candidate[3] in allowed_kinds]
+        if not parseable:
+            raise ValueError("当前脚本类型没有找到可解析的配方")
+        position, _index, marker, _kind, parser = min(parseable)
         ordered_positions = sorted(candidate[0] for candidate in found)
         return ParsedRecipe(
             draft=parser(text),

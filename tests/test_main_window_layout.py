@@ -285,7 +285,7 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
-    def test_loaded_script_keeps_full_file_above_generated_saved_content(self):
+    def test_loaded_script_keeps_full_file_without_auto_parsing(self):
         original_loader = MainWindow._try_load_default_index
         MainWindow._try_load_default_index = lambda _self: None
         try:
@@ -300,11 +300,87 @@ class MainWindowLayoutTest(unittest.TestCase):
 
             self.assertIn("// full file header", window.preview.get_full_text())
             self.assertIn("RecipeRemover.remove", window.preview.get_full_text())
-            self.assertIn("recipes.addShapeless", window.preview.get_text())
+            self.assertIn("Shaped recipe needs an output", window.preview.get_text())
             self.assertNotIn("RecipeRemover.remove", window.preview.get_text())
             self.assertIn("test.zs", window.preview.full_file_frame.cget("text"))
-            self.assertIn("第 1 条", window.preview.generated_frame.cget("text"))
+            self.assertIn("未解析", window.preview.generated_frame.cget("text"))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_imported_script_waits_for_explicit_parse_and_uses_current_type(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            script = (
+                "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+                "mods.gregtech.RA2\n"
+                "    .builder()\n"
+                "    .itemInputs([<minecraft:piston>])\n"
+                "    .itemOutputs([<minecraft:bucket>])\n"
+                "    .fluidInputs([])\n"
+                "    .fluidOutputs([])\n"
+                "    .duration(200)\n"
+                "    .eut(30)\n"
+                "    .addTo(\"gt.recipe.assembler\");"
+            )
+
+            window._load_script_text(script, "mixed.zs")
+            self.assertEqual("shaped", window.recipe_kind.get())
+            self.assertNotIn("<minecraft:stick>", window.preview.get_text())
+
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            window._parse_current_script_to_gui()
+
+            self.assertEqual("machine", window.recipe_kind.get())
+            self.assertEqual("<minecraft:piston>", window.active_input_grid.slots[0].item.expression)
+            self.assertIn("第 2 条", window.preview.generated_frame.cget("text"))
             self.assertIn("行 2", window.preview.generated_frame.cget("text"))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_add_to_script_and_save_use_full_file_content(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            window.preview.set_full_text("// existing")
+            window.recipe_kind.set("shapeless")
+            window._on_recipe_kind_selected()
+            window.active_input_grid.slots[0].set_item(ScriptItem("<minecraft:planks>"))
+            window.active_output_grid.slots[0].set_item(ScriptItem("<minecraft:stick>", 4))
+
+            window._add_generated_to_script()
+
+            self.assertIn("// existing", window.preview.get_full_text())
+            self.assertIn("recipes.addShapeless", window.preview.get_full_text())
+            self.assertEqual(window.preview.get_full_text(), window._save_content())
+            window._undo_full_script()
+            self.assertEqual("// existing", window.preview.get_full_text())
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_full_script_undo_and_redo_buttons_edit_full_file(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            self.assertEqual("撤销", window.undo_button.cget("text"))
+            self.assertEqual("重做", window.redo_button.cget("text"))
+            window.preview.set_full_text("line1")
+            window.preview.full_text.insert("end", "\nline2")
+
+            window._undo_full_script()
+            self.assertEqual("line1", window.preview.get_full_text())
+            window._redo_full_script()
+            self.assertEqual("line1\nline2", window.preview.get_full_text())
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():
