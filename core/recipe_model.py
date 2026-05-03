@@ -44,3 +44,5 @@ class RecipeDraft:
     remove_mode: str = "all"
     template_id: str = "generic_gt_machine"
     recipe_map: str = ""
+    no_fluid_inputs: bool = False
+    no_fluid_outputs: bool = False

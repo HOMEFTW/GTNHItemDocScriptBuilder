@@ -40,7 +40,7 @@
 | Shapeless crafting | 已支持 |
 | Furnace recipe | 已支持 |
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
-| GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、duration、EU/t、recipe map |
+| GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、duration、EU/t、recipe map、无流体输入/输出开关 |
 | Ore dictionary inputs | 已支持输入格填入 |
 | Item amount `*0` | 已支持 |
 | Item suffix / NBT `.withTag(...)` | 已支持原样拼接 |
@@ -55,3 +55,4 @@
 - OreDict、Fluid 和 Item 均作为导出索引读取，不在 GUI 内重新扫描 Minecraft。
 - OreDict 填入逻辑只面向当前选中的输入格，避免生成非法输出表达式。
 - 物品后缀不做语法解析，作为原始 CraftTweaker 片段保存在 `ScriptItem.suffix`。
+- 当前 Addon 源码 `RA2Builder.java` 暴露了 `noFluidInputs()` / `noFluidOutputs()`；Wiki 提到的 `noOptimize()` 未在当前源码中找到，暂不生成。

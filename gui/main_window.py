@@ -77,6 +77,10 @@ class MainWindow:
         self.eut_var = tk.StringVar(value="30")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
+        self.no_fluid_inputs = tk.BooleanVar(value=False)
+        self.no_fluid_outputs = tk.BooleanVar(value=False)
+        self.no_fluid_inputs.trace_add("write", lambda *_: self._refresh_preview())
+        self.no_fluid_outputs.trace_add("write", lambda *_: self._refresh_preview())
         self.selected_item_amount = tk.StringVar(value="1")
         self.selected_item_suffix = tk.StringVar(value="")
         self._syncing_selected_item_options = False
@@ -206,8 +210,20 @@ class MainWindow:
         ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
         ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
+        self.no_fluid_inputs_checkbox = ttk.Checkbutton(
+            params,
+            text="无流体输入",
+            variable=self.no_fluid_inputs,
+        )
+        self.no_fluid_inputs_checkbox.grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.no_fluid_outputs_checkbox = ttk.Checkbutton(
+            params,
+            text="无流体输出",
+            variable=self.no_fluid_outputs,
+        )
+        self.no_fluid_outputs_checkbox.grid(row=5, column=1, sticky=tk.W, pady=2)
         self.remove_mode_label_widget = ttk.Label(params, text="删除布局:")
-        self.remove_mode_label_widget.grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.remove_mode_label_widget.grid(row=6, column=0, sticky=tk.W, pady=2)
         self.remove_mode_combo = ttk.Combobox(
             params,
             textvariable=self.remove_mode,
@@ -215,7 +231,7 @@ class MainWindow:
             state="readonly",
             width=12,
         )
-        self.remove_mode_combo.grid(row=5, column=1, sticky=tk.W, pady=2)
+        self.remove_mode_combo.grid(row=6, column=1, sticky=tk.W, pady=2)
         self.remove_mode_combo.bind("<<ComboboxSelected>>", lambda _event: self._on_remove_mode_selected())
 
         self.fluid_inputs = FluidListFrame(parent, "流体输入", self._choose_fluid, self._refresh_preview)
@@ -453,6 +469,8 @@ class MainWindow:
             remove_mode=remove_mode_id_from_label(self.remove_mode.get()),
             template_id=self.template_id.get(),
             recipe_map=recipe_map_id_from_label(self.recipe_map.get()),
+            no_fluid_inputs=bool(self.no_fluid_inputs.get()),
+            no_fluid_outputs=bool(self.no_fluid_outputs.get()),
         )
 
     def _refresh_preview(self):

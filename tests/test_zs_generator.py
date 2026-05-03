@@ -118,6 +118,26 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertIn(".duration(200)", script)
         self.assertIn(".eut(30)", script)
 
+    def test_generates_gt_recipe_with_explicit_no_fluid_calls(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:iron_ingot>")],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            fluid_inputs=[ScriptFluid("water", 1000)],
+            fluid_outputs=[ScriptFluid("steam", 1000)],
+            no_fluid_inputs=True,
+            no_fluid_outputs=True,
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+
+        self.assertIn(".noFluidInputs()", script)
+        self.assertIn(".noFluidOutputs()", script)
+        self.assertNotIn(".fluidInputs(", script)
+        self.assertNotIn(".fluidOutputs(", script)
+
     def test_generates_gt_recipe_remover(self):
         draft = RecipeDraft(
             kind="machine_remove",

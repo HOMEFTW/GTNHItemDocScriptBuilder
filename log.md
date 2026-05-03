@@ -1,5 +1,23 @@
 # Development Log
 
+## 2026-05-03: RA2 无流体输入输出开关
+
+### Completed
+- 参考 `Minetweaker-Gregtech-5-Addon` Wiki 和源码 `RA2Builder.java`，核对 RA2 builder 可用方法。
+- 为 `RecipeDraft` 增加 `no_fluid_inputs` 和 `no_fluid_outputs`。
+- 在 GTNH/模组机器参数区增加“无流体输入”和“无流体输出”复选框。
+- 勾选后生成 `.noFluidInputs()` / `.noFluidOutputs()`，并跳过对应的 `.fluidInputs(...)` / `.fluidOutputs(...)`。
+- 补充生成器和 GUI 测试。
+
+### Issues Encountered
+- **Wiki 与当前源码不完全一致**：Wiki 文档列出 `.noOptimize()`，但当前 `RA2Builder.java` 未暴露该 `@ZenMethod` → 暂不让 GUI 生成 `.noOptimize()`。
+
+### Decisions Made
+- 先支持源码确认存在的 `.noFluidInputs()` 和 `.noFluidOutputs()`，保证生成脚本可用。
+- 保持三栏比例不变；新增复选框放入中间参数区。
+
+---
+
 ## 2026-05-03: 增加 GUI 窗口高度
 
 ### Completed

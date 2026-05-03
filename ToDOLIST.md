@@ -3,7 +3,6 @@
 ## Next Priorities
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
-- [ ] Add RA2 toggles for `.noFluidInputs()` and `.noFluidOutputs()`.
 - [ ] Add RA2 optional fields from the wiki and real scripts: `.outputChances(...)`, `.noOptimize()`, `.specialValue(...)`, `.specialItem(...)`.
 - [ ] Improve `RecipeRemover.remove` editor for multi-line item/fluid input removal.
 - [ ] Add import/parse support for existing `.zs` scripts so complete scripts like `ZZZ-NxerCustoms.zs` can seed GUI drafts.
@@ -56,3 +55,4 @@
 - [x] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
 - [x] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.
 - [x] Increase GUI window height so newly added editor controls are visible.
+- [x] Add RA2 toggles for `.noFluidInputs()` and `.noFluidOutputs()`.

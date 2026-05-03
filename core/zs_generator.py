@@ -116,8 +116,8 @@ class ZsGenerator:
             "    .builder()\n"
             f"    .itemInputs({self._item_array(self._present_items(draft.item_inputs))})\n"
             f"    .itemOutputs({self._item_array(outputs)})\n"
-            f"    .fluidInputs({self._fluid_array(draft.fluid_inputs)})\n"
-            f"    .fluidOutputs({self._fluid_array(draft.fluid_outputs)})\n"
+            f"{self._fluid_input_call(draft)}\n"
+            f"{self._fluid_output_call(draft)}\n"
             f"    .duration({draft.duration})\n"
             f"    .eut({draft.eut})\n"
             f"    .addTo(\"{recipe_map}\");"
@@ -164,3 +164,13 @@ class ZsGenerator:
 
     def _fluid_array(self, fluids: Iterable[ScriptFluid]) -> str:
         return "[" + ", ".join(fluid.to_zs() for fluid in fluids) + "]"
+
+    def _fluid_input_call(self, draft: RecipeDraft) -> str:
+        if draft.no_fluid_inputs:
+            return "    .noFluidInputs()"
+        return f"    .fluidInputs({self._fluid_array(draft.fluid_inputs)})"
+
+    def _fluid_output_call(self, draft: RecipeDraft) -> str:
+        if draft.no_fluid_outputs:
+            return "    .noFluidOutputs()"
+        return f"    .fluidOutputs({self._fluid_array(draft.fluid_outputs)})"

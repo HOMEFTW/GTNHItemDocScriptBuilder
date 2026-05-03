@@ -83,6 +83,25 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_no_fluid_flags_are_available_in_machine_parameters(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertEqual("无流体输入", window.no_fluid_inputs_checkbox.cget("text"))
+            self.assertEqual("无流体输出", window.no_fluid_outputs_checkbox.cget("text"))
+            window.no_fluid_inputs.set(True)
+            window.no_fluid_outputs.set(True)
+            draft = window._draft()
+
+            self.assertTrue(draft.no_fluid_inputs)
+            self.assertTrue(draft.no_fluid_outputs)
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()
