@@ -18,6 +18,8 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 
 如果同目录存在 `fluid_index.json`，GUI 会自动加载流体索引。GTNH/模组机器模板中的“流体输入”和“流体输出”可以点击“搜索”，按中文名、`fluidName` 或 `<liquid:...>` 表达式查找流体，双击后填入当前流体行。
 
+如果同目录存在 `ore_dictionary_index.json`，GUI 会自动加载矿物字典索引。先点击一个配方输入格，再点击工具栏的“填入 OreDict”，可以按 `oreName`、`<ore:...>` 表达式或包含的物品表达式搜索，双击后会把 `<ore:...>` 写入当前输入格。OreDict 只作为输入使用，不会填入输出格。
+
 ## 支持脚本
 
 - 有序合成
@@ -25,6 +27,7 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - 熔炉配方
 - 删除配方
 - GTNH / 模组机器模板配方
+- 矿物字典输入 `<ore:...>`
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，GTNH/模组机器为 16 个物品输入加 4 个物品输出。机器模板支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
 

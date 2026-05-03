@@ -1,7 +1,8 @@
 import tkinter as tk
 import unittest
 
-from gui.widgets import FluidListFrame, ItemSearchFrame, PreviewFrame
+from core.ore_dictionary_index import OreDictionaryIndexStore
+from gui.widgets import FluidListFrame, ItemSearchFrame, OreDictionarySearchDialog, PreviewFrame
 
 
 class ItemSearchFrameTest(unittest.TestCase):
@@ -49,6 +50,38 @@ class PreviewFrameTest(unittest.TestCase):
         self.assertTrue(frame.text.cget("xscrollcommand"))
         self.assertEqual("vertical", str(frame.vertical_scrollbar.cget("orient")))
         self.assertEqual("horizontal", str(frame.horizontal_scrollbar.cget("orient")))
+
+
+class OreDictionarySearchDialogTest(unittest.TestCase):
+    def setUp(self):
+        self.root = tk.Tk()
+        self.root.withdraw()
+
+    def tearDown(self):
+        self.root.destroy()
+
+    def test_ore_dictionary_dialog_lists_search_results(self):
+        store = OreDictionaryIndexStore.from_data(
+            {
+                "entries": [
+                    {
+                        "oreName": "stickWood",
+                        "ctExpression": "<ore:stickWood>",
+                        "itemCount": 2,
+                        "items": ["<minecraft:stick>", "<BiomesOPlenty:bamboo>"],
+                        "guid": "stickWood",
+                    }
+                ]
+            }
+        )
+        dialog = OreDictionarySearchDialog(self.root, store, lambda _entry: None)
+
+        self.assertEqual("选择矿物字典", dialog.title())
+        self.assertEqual(1, len(dialog.entries))
+        self.assertTrue(dialog.tree.cget("yscrollcommand"))
+        self.assertTrue(dialog.tree.cget("xscrollcommand"))
+
+        dialog.destroy()
 
 
 if __name__ == "__main__":

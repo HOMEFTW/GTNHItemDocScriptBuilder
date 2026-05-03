@@ -1,5 +1,6 @@
 import unittest
 
+from core.ore_dictionary_index import OreDictionaryEntry
 from gui.main_window import (
     EDITOR_PANE_WEIGHT,
     MIN_WINDOW_SIZE,
@@ -31,12 +32,30 @@ class MainWindowLayoutTest(unittest.TestCase):
             self.assertEqual(SEARCH_PANE_WIDTH, int(window.search_frame.cget("width")))
             self.assertEqual(PREVIEW_PANE_WIDTH, int(window.preview.cget("width")))
             self.assertFalse(window.preview.grid_propagate())
+            self.assertEqual("填入 OreDict", window.ore_dictionary_button.cget("text"))
             window.recipe_kind.set("remove")
             window._on_recipe_kind_selected()
 
             self.assertEqual("删除布局:", window.remove_mode_label_widget.cget("text"))
             self.assertTrue(window.remove_mode_combo.grid_info())
             self.assertEqual(("有序", "无序", "熔炉", "GT"), window.remove_mode_combo.cget("values"))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
+    def test_picking_ore_dictionary_entry_fills_selected_input_slot(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            slot = window.active_input_grid.slots[0]
+            window._select_slot(slot)
+
+            window._pick_ore_dictionary(OreDictionaryEntry("stickWood", "<ore:stickWood>", 16, [], "stickWood"))
+
+            self.assertEqual("<ore:stickWood>", slot.item.expression)
+            self.assertEqual("<ore:stickWood>", slot.cget("text"))
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():

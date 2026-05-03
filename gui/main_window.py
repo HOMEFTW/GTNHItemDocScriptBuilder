@@ -5,6 +5,11 @@ from tkinter import ttk
 
 from core.fluid_index import FluidEntry, FluidIndexStore, default_fluid_index_path
 from core.item_index import ItemEntry, ItemIndexStore
+from core.ore_dictionary_index import (
+    OreDictionaryEntry,
+    OreDictionaryIndexStore,
+    default_ore_dictionary_index_path,
+)
 from core.recipe_layout import (
     LAYOUTS,
     layout_key_for,
@@ -23,7 +28,15 @@ from core.templates import (
 )
 from core.zs_generator import ZsGenerator
 from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
-from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
+from gui.widgets import (
+    FluidListFrame,
+    FluidSearchDialog,
+    ItemSearchFrame,
+    OreDictionarySearchDialog,
+    PreviewFrame,
+    SlotButton,
+    SlotGridFrame,
+)
 
 
 MIN_WINDOW_SIZE = (1400, 760)
@@ -48,6 +61,7 @@ class MainWindow:
         self.root.minsize(*MIN_WINDOW_SIZE)
         self.store: ItemIndexStore | None = None
         self.fluid_store: FluidIndexStore | None = None
+        self.ore_dictionary_store: OreDictionaryIndexStore | None = None
         self.generator = ZsGenerator()
         self.selected_slot: SlotButton | None = None
         self.active_input_grid: SlotGridFrame | None = None
@@ -95,6 +109,9 @@ class MainWindow:
         ttk.Button(toolbar, text="复制预览", command=self._copy_preview).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="保存 .zs", command=self._save_script).pack(side=tk.LEFT, padx=4)
         ttk.Button(toolbar, text="清空格子", command=self._clear_slots).pack(side=tk.LEFT, padx=4)
+        self.ore_dictionary_button = ttk.Button(toolbar, text="填入 OreDict", command=self._choose_ore_dictionary)
+        self.ore_dictionary_button.pack(side=tk.LEFT, padx=4)
+        self._set_ore_dictionary_search_enabled(False)
         ttk.Label(toolbar, textvariable=self.status_var).pack(side=tk.RIGHT)
 
         panes = ttk.PanedWindow(main, orient=tk.HORIZONTAL)
@@ -233,9 +250,12 @@ class MainWindow:
         try:
             self.store = ItemIndexStore.load(path)
             fluid_status = self._load_fluid_index(path)
+            ore_dictionary_status = self._load_ore_dictionary_index(path)
             self.config.item_index_path = path
             self.search_frame.set_entries(self.store.search("", limit=500))
-            self.status_var.set(f"已加载 {self.store.entry_count} 条物品/方块{fluid_status}，语言 {self.store.language}")
+            self.status_var.set(
+                f"已加载 {self.store.entry_count} 条物品/方块{fluid_status}{ore_dictionary_status}，语言 {self.store.language}"
+            )
         except Exception as exc:
             show_error("加载失败", str(exc))
 
@@ -253,6 +273,21 @@ class MainWindow:
             self.fluid_store = None
             self._set_fluid_search_enabled(False)
             return f"，流体索引加载失败：{exc}"
+
+    def _load_ore_dictionary_index(self, item_index_path: str) -> str:
+        ore_dictionary_path = default_ore_dictionary_index_path(item_index_path)
+        if not ore_dictionary_path.exists():
+            self.ore_dictionary_store = None
+            self._set_ore_dictionary_search_enabled(False)
+            return "，未找到矿物字典索引"
+        try:
+            self.ore_dictionary_store = OreDictionaryIndexStore.load(ore_dictionary_path)
+            self._set_ore_dictionary_search_enabled(True)
+            return f"，{self.ore_dictionary_store.entry_count} 个矿物字典"
+        except Exception as exc:
+            self.ore_dictionary_store = None
+            self._set_ore_dictionary_search_enabled(False)
+            return f"，矿物字典索引加载失败：{exc}"
 
     def _search(self, query: str):
         if self.store is None:
@@ -301,6 +336,33 @@ class MainWindow:
         self.status_var.set(f"已填入 {entry.chinese_name or entry.registry_id}")
         self._refresh_preview()
 
+    def _choose_ore_dictionary(self):
+        if self.ore_dictionary_store is None:
+            self.status_var.set("未加载 ore_dictionary_index.json，请选择包含矿物字典索引的 item_index.json")
+            return
+        if self.selected_slot is None:
+            self.status_var.set("请先点击一个配方输入格")
+            return
+        if self.active_input_grid and self.selected_slot not in self.active_input_grid.slots:
+            self.status_var.set("OreDict 只能填入配方输入格")
+            return
+        OreDictionarySearchDialog(
+            self.root,
+            self.ore_dictionary_store,
+            self._pick_ore_dictionary,
+        )
+
+    def _pick_ore_dictionary(self, entry: OreDictionaryEntry):
+        if self.selected_slot is None:
+            self.status_var.set("请先点击一个配方输入格")
+            return
+        if self.active_input_grid and self.selected_slot not in self.active_input_grid.slots:
+            self.status_var.set("OreDict 只能填入配方输入格")
+            return
+        self.selected_slot.set_item(ScriptItem(entry.ct_expression, 1, "OreDict " + entry.ore_name))
+        self.status_var.set(f"已填入 {entry.ct_expression}")
+        self._refresh_preview()
+
     def _choose_fluid(self, target: FluidListFrame):
         if self.fluid_store is None:
             self.status_var.set("未加载 fluid_index.json，请选择包含流体索引的导出目录中的 item_index.json")
@@ -317,6 +379,10 @@ class MainWindow:
             self.fluid_inputs.set_search_enabled(enabled)
         if hasattr(self, "fluid_outputs"):
             self.fluid_outputs.set_search_enabled(enabled)
+
+    def _set_ore_dictionary_search_enabled(self, enabled: bool):
+        if hasattr(self, "ore_dictionary_button"):
+            self.ore_dictionary_button.configure(state=tk.NORMAL if enabled else tk.DISABLED)
 
     def _draft(self) -> RecipeDraft:
         input_grid = self.active_input_grid or self.slot_editors["shaped"][0]

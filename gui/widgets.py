@@ -5,6 +5,7 @@ from typing import Callable, List, Optional
 
 from core.fluid_index import FluidEntry, FluidIndexStore
 from core.item_index import ItemEntry
+from core.ore_dictionary_index import OreDictionaryEntry, OreDictionaryIndexStore
 from core.recipe_model import ScriptFluid, ScriptItem
 
 
@@ -215,6 +216,85 @@ class FluidSearchDialog(tk.Toplevel):
                     entry.ct_expression,
                     entry.temperature,
                     "是" if entry.gaseous else "否",
+                ),
+            )
+
+    def _on_double_click(self, _event):
+        item_id = self.tree.focus()
+        if item_id:
+            self.on_pick(self.entries[int(item_id)])
+            self.destroy()
+
+
+class OreDictionarySearchDialog(tk.Toplevel):
+    def __init__(self, parent, store: OreDictionaryIndexStore, on_pick: Callable[[OreDictionaryEntry], None]):
+        super().__init__(parent)
+        self.store = store
+        self.on_pick = on_pick
+        self.entries: List[OreDictionaryEntry] = []
+        self.query_var = tk.StringVar()
+        self.query_var.trace_add("write", lambda *_: self._search())
+        self.title("选择矿物字典")
+        self.geometry("860x460")
+        self.transient(parent)
+        self.grab_set()
+        self._create_widgets()
+        self._search()
+        self.query_entry.focus_set()
+
+    def _create_widgets(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+        top = ttk.Frame(root)
+        top.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(top, text="搜索 OreDict:").pack(side=tk.LEFT)
+        self.query_entry = ttk.Entry(top, textvariable=self.query_var)
+        self.query_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        table = ttk.Frame(root)
+        table.pack(fill=tk.BOTH, expand=True)
+        columns = ("ore", "ct", "count", "items")
+        self.tree = ttk.Treeview(table, columns=columns, show="headings", height=16)
+        headings = {
+            "ore": "OreDict 名称",
+            "ct": "CT 表达式",
+            "count": "物品数",
+            "items": "包含物品",
+        }
+        widths = {"ore": 180, "ct": 220, "count": 60, "items": 420}
+        for key in columns:
+            self.tree.heading(key, text=headings[key])
+            self.tree.column(key, width=widths[key], anchor=tk.W)
+        vertical_scrollbar = ttk.Scrollbar(table, orient=tk.VERTICAL, command=self.tree.yview)
+        self.horizontal_scrollbar = ttk.Scrollbar(table, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(
+            yscrollcommand=vertical_scrollbar.set,
+            xscrollcommand=self.horizontal_scrollbar.set,
+        )
+        self.tree.grid(row=0, column=0, sticky=tk.NSEW)
+        vertical_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        self.horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
+        table.rowconfigure(0, weight=1)
+        table.columnconfigure(0, weight=1)
+        self.tree.bind("<Double-Button-1>", self._on_double_click)
+        self.tree.bind("<Return>", self._on_double_click)
+
+    def _search(self):
+        self.set_entries(self.store.search(self.query_var.get(), limit=500))
+
+    def set_entries(self, entries: List[OreDictionaryEntry]):
+        self.entries = entries
+        self.tree.delete(*self.tree.get_children())
+        for index, entry in enumerate(entries):
+            self.tree.insert(
+                "",
+                tk.END,
+                iid=str(index),
+                values=(
+                    entry.ore_name,
+                    entry.ct_expression,
+                    entry.item_count,
+                    " ".join(entry.items[:12]),
                 ),
             )
 
