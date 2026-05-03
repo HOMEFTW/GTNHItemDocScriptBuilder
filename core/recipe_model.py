@@ -41,6 +41,7 @@ class RecipeDraft:
     fluid_outputs: List[ScriptFluid] = field(default_factory=list)
     duration: int = 200
     eut: int = 30
+    special_value: Optional[int] = None
     xp: float = 0.0
     include_furnace_xp: bool = True
     shaped_mirrored: bool = False

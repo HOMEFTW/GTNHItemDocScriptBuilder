@@ -1,5 +1,21 @@
 # Development Log
 
+## 2026-05-03: RA2 Special Value 支持
+
+### Completed
+- 为 `RecipeDraft` 增加可选 `special_value`。
+- GTNH/模组机器生成器支持 `.specialValue(value)`，空值时不生成该调用。
+- GUI 在 GTNH/模组机器参数区增加 `Special Value` 输入框，只在机器配方显示。
+- 补充生成器和 GUI 测试。
+
+### Issues Encountered
+- **`specialValue` 只适用于 RA2 机器配方**：删除、合成、熔炉、燃料都不应显示该参数 → 复用机器参数显隐规则。
+
+### Decisions Made
+- `Special Value` 使用整数原样生成，不做业务含义解释；不同 recipe map 的特殊值语义留给用户按 GTNH 脚本规则填写。
+
+---
+
 ## 2026-05-03: RA2 输出概率支持
 
 ### Completed

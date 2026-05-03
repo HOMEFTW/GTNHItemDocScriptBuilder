@@ -128,6 +128,7 @@ class ZsGenerator:
             f"{self._output_chances_call(draft, len(outputs))}"
             f"{self._fluid_input_call(draft)}\n"
             f"{self._fluid_output_call(draft)}\n"
+            f"{self._special_value_call(draft)}"
             f"    .duration({draft.duration})\n"
             f"    .eut({draft.eut})\n"
             f"    .addTo(\"{recipe_map}\");"
@@ -182,6 +183,11 @@ class ZsGenerator:
         while len(chances) < output_count:
             chances.append(10000)
         return "    .outputChances([" + ", ".join(str(chance) for chance in chances) + "])\n"
+
+    def _special_value_call(self, draft: RecipeDraft) -> str:
+        if draft.special_value is None:
+            return ""
+        return f"    .specialValue({draft.special_value})\n"
 
     def _fluid_input_call(self, draft: RecipeDraft) -> str:
         if draft.no_fluid_inputs:

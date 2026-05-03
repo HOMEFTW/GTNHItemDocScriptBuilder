@@ -32,6 +32,7 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - 矿物字典输入 `<ore:...>`
 - 物品数量 `*0` 和 `.withTag(...)` 后缀
 - RA2 `.outputChances(...)` 输出概率
+- RA2 `.specialValue(...)`
 - RA2 `.noFluidInputs()` / `.noFluidOutputs()` 开关
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，燃料为 1 个输入且无输出，GTNH/模组机器为 16 个物品输入加 4 个物品输出。机器模板支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
@@ -43,6 +44,8 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 参数区提供 MineTweaker 常用选项：“镜像有序合成”会让有序合成生成 `recipes.addShapedMirrored(...)`；“写入熔炉 XP”关闭后，熔炉配方会生成两参数写法 `furnace.addRecipe(output, input);`；“燃烧时间”用于燃料模式生成 `furnace.setFuel(item, ticks);`。
 
 参数和流体区会按脚本类型显示：有序/无序合成不显示流体，熔炉只显示 XP，燃料只显示燃烧时间，GTNH/模组机器显示模板、`Recipe Map`、`Duration`、`EU/t`、无流体开关和流体输入/输出。删除模式只有选择 `GT` 时才显示 `Recipe Map` 和流体输入。
+
+GTNH/模组机器参数区的 `Special Value` 默认留空，不生成脚本；填入整数后会生成 `.specialValue(value)`。
 
 GUI 的第一 UI 优先级是保持当前三栏比例：左侧物品搜索栏固定宽度，右侧 ZS 预览固定宽度，中间编辑区使用剩余空间。默认窗口为 `1500 x 920`，旧保存配置的高度低于 `900` 时会自动提升；后续新增控件时必须先保证这个比例不被破坏；左侧和右侧长内容依靠各自滚动条查看，不允许撑宽侧栏挤压中间编辑区。
 

@@ -199,6 +199,20 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertIn(".itemOutputs([<minecraft:iron_ingot>, <minecraft:gold_nugget>])", script)
         self.assertIn(".outputChances([10000, 2500])", script)
 
+    def test_generates_gt_recipe_with_special_value(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:iron_ingot>")],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            special_value=42,
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+
+        self.assertIn(".specialValue(42)", script)
+
     def test_generates_gt_recipe_remover(self):
         draft = RecipeDraft(
             kind="machine_remove",

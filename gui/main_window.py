@@ -78,6 +78,7 @@ class MainWindow:
         self.fuel_ticks_var = tk.StringVar(value="1600")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
+        self.special_value_var = tk.StringVar(value="")
         self.output_chance_var = tk.StringVar(value="10000")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
@@ -88,6 +89,7 @@ class MainWindow:
         self.include_furnace_xp.trace_add("write", lambda *_: self._refresh_preview())
         self.shaped_mirrored.trace_add("write", lambda *_: self._refresh_preview())
         self.fuel_ticks_var.trace_add("write", lambda *_: self._refresh_preview())
+        self.special_value_var.trace_add("write", lambda *_: self._refresh_preview())
         self.selected_item_amount = tk.StringVar(value="1")
         self.selected_item_suffix = tk.StringVar(value="")
         self._syncing_selected_item_options = False
@@ -233,6 +235,10 @@ class MainWindow:
         self.duration_label_widget.grid(row=3, column=0, sticky=tk.W, pady=2)
         self.duration_entry = ttk.Entry(params, textvariable=self.duration_var, width=10)
         self.duration_entry.grid(row=3, column=1, sticky=tk.W, pady=2)
+        self.special_value_label_widget = ttk.Label(params, text="Special Value:")
+        self.special_value_label_widget.grid(row=5, column=0, sticky=tk.W, pady=2)
+        self.special_value_entry = ttk.Entry(params, textvariable=self.special_value_var, width=10)
+        self.special_value_entry.grid(row=5, column=1, sticky=tk.W, pady=2)
         self.shaped_mirrored_checkbox = ttk.Checkbutton(
             params,
             text="镜像有序合成",
@@ -425,7 +431,14 @@ class MainWindow:
         )
         self._set_grid_visible([self.xp_label_widget, self.xp_entry], shows_furnace_parameters)
         self._set_grid_visible(
-            [self.duration_label_widget, self.duration_entry, self.eut_label_widget, self.eut_entry],
+            [
+                self.duration_label_widget,
+                self.duration_entry,
+                self.eut_label_widget,
+                self.eut_entry,
+                self.special_value_label_widget,
+                self.special_value_entry,
+            ],
             shows_machine_recipe_parameters,
         )
         self._set_grid_visible(
@@ -603,6 +616,7 @@ class MainWindow:
             fluid_outputs=self.fluid_outputs.fluids(),
             duration=int(self.duration_var.get() or "0"),
             eut=int(self.eut_var.get() or "0"),
+            special_value=self._special_value(),
             xp=float(self.xp_var.get() or "0"),
             include_furnace_xp=bool(self.include_furnace_xp.get()),
             shaped_mirrored=bool(self.shaped_mirrored.get()),
@@ -618,6 +632,12 @@ class MainWindow:
         if self.recipe_kind.get() != "machine":
             return []
         return [slot.output_chance for slot in output_grid.slots if slot.item is not None]
+
+    def _special_value(self) -> int | None:
+        value = self.special_value_var.get().strip()
+        if not value:
+            return None
+        return int(value)
 
     def _refresh_preview(self):
         try:

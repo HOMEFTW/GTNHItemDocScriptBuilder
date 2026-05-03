@@ -240,6 +240,30 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_machine_parameters_can_edit_special_value(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertFalse(window.special_value_label_widget.grid_info())
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            self.assertEqual("Special Value:", window.special_value_label_widget.cget("text"))
+            self.assertTrue(window.special_value_label_widget.grid_info())
+            window.special_value_var.set("42")
+            draft = window._draft()
+
+            self.assertEqual(42, draft.special_value)
+            window.recipe_kind.set("remove")
+            window.remove_mode.set("GT")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.special_value_label_widget.grid_info())
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

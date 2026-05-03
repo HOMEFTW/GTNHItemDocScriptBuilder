@@ -45,7 +45,7 @@
 | Furnace recipe | 已支持，可选择是否写入 XP 参数 |
 | Furnace fuel | 已支持，生成 `furnace.setFuel(item, ticks)` |
 | Recipe removal layouts | 已支持有序、无序、熔炉、GT 子选项 |
-| GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、outputChances、duration、EU/t、recipe map、无流体输入/输出开关 |
+| GTNH RA2 builder | 已支持基础 item/fluid inputs/outputs、outputChances、specialValue、duration、EU/t、recipe map、无流体输入/输出开关 |
 | Ore dictionary inputs | 已支持输入格填入 |
 | Item amount `*0` | 已支持 |
 | Item suffix / NBT `.withTag(...)` | 已支持原样拼接 |
@@ -61,4 +61,5 @@
 - OreDict 填入逻辑只面向当前选中的输入格，避免生成非法输出表达式。
 - 物品后缀不做语法解析，作为原始 CraftTweaker 片段保存在 `ScriptItem.suffix`。
 - RA2 输出概率使用 GregTech 常用单位 `10000 = 100%`，只在 GTNH/模组机器输出格上编辑和生成。
+- RA2 `specialValue` 为可选整数，空值时不生成 `.specialValue(...)`。
 - 当前 Addon 源码 `RA2Builder.java` 暴露了 `noFluidInputs()` / `noFluidOutputs()`；Wiki 提到的 `noOptimize()` 未在当前源码中找到，暂不生成。
