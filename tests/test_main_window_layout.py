@@ -164,6 +164,60 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_parameters_and_fluids_only_show_for_supported_script_type(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertFalse(window.template_label_widget.grid_info())
+            self.assertFalse(window.recipe_map_label_widget.grid_info())
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+            self.assertFalse(window.fluid_outputs.winfo_manager())
+
+            window.recipe_kind.set("shapeless")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+            self.assertFalse(window.fluid_outputs.winfo_manager())
+
+            window.recipe_kind.set("furnace")
+            window._on_recipe_kind_selected()
+            self.assertTrue(window.xp_label_widget.grid_info())
+            self.assertTrue(window.xp_entry.grid_info())
+            self.assertFalse(window.duration_label_widget.grid_info())
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+
+            window.recipe_kind.set("fuel")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.xp_label_widget.grid_info())
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            self.assertTrue(window.template_label_widget.grid_info())
+            self.assertTrue(window.recipe_map_label_widget.grid_info())
+            self.assertTrue(window.duration_label_widget.grid_info())
+            self.assertTrue(window.eut_label_widget.grid_info())
+            self.assertEqual("pack", window.fluid_inputs.winfo_manager())
+            self.assertEqual("pack", window.fluid_outputs.winfo_manager())
+
+            window.recipe_kind.set("remove")
+            window.remove_mode.set("有序")
+            window._on_recipe_kind_selected()
+            self.assertFalse(window.template_label_widget.grid_info())
+            self.assertFalse(window.fluid_inputs.winfo_manager())
+
+            window.remove_mode.set("GT")
+            window._on_remove_mode_selected()
+            self.assertTrue(window.template_label_widget.grid_info())
+            self.assertTrue(window.recipe_map_label_widget.grid_info())
+            self.assertEqual("pack", window.fluid_inputs.winfo_manager())
+            self.assertFalse(window.fluid_outputs.winfo_manager())
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

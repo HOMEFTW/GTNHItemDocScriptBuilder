@@ -31,6 +31,7 @@
 - 中间编辑区使用剩余空间：`EDITOR_PANE_WEIGHT = 6`
 - 参数区内 MineTweaker 选项使用左侧纵向排列，避免被 `Recipe Map` 宽列推到右边。
 - MineTweaker 专项参数按脚本类型显隐：`shaped_mirrored` 仅有序合成，`include_furnace_xp` 仅熔炉，`fuel_ticks` 仅燃料。
+- 参数和流体区按能力显隐：合成/熔炉/燃料不显示 GT 流体区，机器显示流体输入/输出，GT 删除只显示流体输入。
 - 默认窗口：`1500 x 920`
 - 最小窗口：`1400 x 900`
 - 后续新增控件必须优先保持该比例，长内容通过滚动条处理。

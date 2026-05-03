@@ -41,6 +41,8 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 
 参数区提供 MineTweaker 常用选项：“镜像有序合成”会让有序合成生成 `recipes.addShapedMirrored(...)`；“写入熔炉 XP”关闭后，熔炉配方会生成两参数写法 `furnace.addRecipe(output, input);`；“燃烧时间”用于燃料模式生成 `furnace.setFuel(item, ticks);`。
 
+参数和流体区会按脚本类型显示：有序/无序合成不显示流体，熔炉只显示 XP，燃料只显示燃烧时间，GTNH/模组机器显示模板、`Recipe Map`、`Duration`、`EU/t`、无流体开关和流体输入/输出。删除模式只有选择 `GT` 时才显示 `Recipe Map` 和流体输入。
+
 GUI 的第一 UI 优先级是保持当前三栏比例：左侧物品搜索栏固定宽度，右侧 ZS 预览固定宽度，中间编辑区使用剩余空间。默认窗口为 `1500 x 920`，旧保存配置的高度低于 `900` 时会自动提升；后续新增控件时必须先保证这个比例不被破坏；左侧和右侧长内容依靠各自滚动条查看，不允许撑宽侧栏挤压中间编辑区。
 
 GTNH/模组机器模式下，“模板”下方有 `Recipe Map` 下拉框。列表来自 Wiki 的 `Available recipe maps`，界面会显示中文名和原 ID，例如 `组装机 (gt.recipe.assembler)`；选择后会覆盖模板默认 recipe map，生成脚本时仍使用括号中的原 ID。参数区的“无流体输入”和“无流体输出”会生成 RA2 的 `.noFluidInputs()` / `.noFluidOutputs()`，并跳过对应的 `.fluidInputs(...)` / `.fluidOutputs(...)`。

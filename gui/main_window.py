@@ -189,46 +189,54 @@ class MainWindow:
 
         params = ttk.LabelFrame(parent, text="参数", padding=5)
         params.pack(fill=tk.X)
-        ttk.Label(params, text="模板:").grid(row=0, column=0, sticky=tk.W, pady=2)
-        combo = ttk.Combobox(
+        self.template_label_widget = ttk.Label(params, text="模板:")
+        self.template_label_widget.grid(row=0, column=0, sticky=tk.W, pady=2)
+        self.template_combo = ttk.Combobox(
             params,
             textvariable=self.template_id,
             values=[template.template_id for template in template_options()],
             state="readonly",
             width=28,
         )
-        combo.grid(row=0, column=1, sticky=tk.W, pady=2)
-        combo.bind("<<ComboboxSelected>>", lambda _event: self._on_template_selected())
+        self.template_combo.grid(row=0, column=1, sticky=tk.W, pady=2)
+        self.template_combo.bind("<<ComboboxSelected>>", lambda _event: self._on_template_selected())
 
-        ttk.Label(params, text="Recipe Map:").grid(row=1, column=0, sticky=tk.W, pady=2)
-        map_combo = ttk.Combobox(
+        self.recipe_map_label_widget = ttk.Label(params, text="Recipe Map:")
+        self.recipe_map_label_widget.grid(row=1, column=0, sticky=tk.W, pady=2)
+        self.recipe_map_combo = ttk.Combobox(
             params,
             textvariable=self.recipe_map,
             values=recipe_map_label_options(),
             state="readonly",
             width=42,
         )
-        map_combo.grid(row=1, column=1, sticky=tk.W, pady=2)
-        map_combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_preview())
+        self.recipe_map_combo.grid(row=1, column=1, sticky=tk.W, pady=2)
+        self.recipe_map_combo.bind("<<ComboboxSelected>>", lambda _event: self._refresh_preview())
 
-        ttk.Label(params, text="XP:").grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.xp_var, width=10).grid(row=2, column=1, sticky=tk.W, pady=2)
+        self.xp_label_widget = ttk.Label(params, text="XP:")
+        self.xp_label_widget.grid(row=2, column=0, sticky=tk.W, pady=2)
+        self.xp_entry = ttk.Entry(params, textvariable=self.xp_var, width=10)
+        self.xp_entry.grid(row=2, column=1, sticky=tk.W, pady=2)
         self.include_furnace_xp_checkbox = ttk.Checkbutton(
             params,
             text="写入熔炉 XP",
             variable=self.include_furnace_xp,
         )
         self.include_furnace_xp_checkbox.grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=2)
-        ttk.Label(params, text="Duration:").grid(row=3, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
+        self.duration_label_widget = ttk.Label(params, text="Duration:")
+        self.duration_label_widget.grid(row=3, column=0, sticky=tk.W, pady=2)
+        self.duration_entry = ttk.Entry(params, textvariable=self.duration_var, width=10)
+        self.duration_entry.grid(row=3, column=1, sticky=tk.W, pady=2)
         self.shaped_mirrored_checkbox = ttk.Checkbutton(
             params,
             text="镜像有序合成",
             variable=self.shaped_mirrored,
         )
         self.shaped_mirrored_checkbox.grid(row=6, column=0, columnspan=2, sticky=tk.W, pady=2)
-        ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
-        ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
+        self.eut_label_widget = ttk.Label(params, text="EU/t:")
+        self.eut_label_widget.grid(row=4, column=0, sticky=tk.W, pady=2)
+        self.eut_entry = ttk.Entry(params, textvariable=self.eut_var, width=10)
+        self.eut_entry.grid(row=4, column=1, sticky=tk.W, pady=2)
         self.fuel_ticks_label_widget = ttk.Label(params, text="燃烧时间:")
         self.fuel_ticks_label_widget.grid(row=7, column=0, sticky=tk.W, pady=2)
         self.fuel_ticks_entry = ttk.Entry(params, textvariable=self.fuel_ticks_var, width=10)
@@ -369,6 +377,7 @@ class MainWindow:
     def _on_remove_mode_selected(self):
         if self.recipe_kind.get() == "remove":
             self._show_slot_editor("remove")
+        self._update_parameter_visibility()
         self._refresh_preview()
 
     def _update_remove_options_visibility(self):
@@ -396,9 +405,54 @@ class MainWindow:
             self.fuel_ticks_label_widget.grid_remove()
             self.fuel_ticks_entry.grid_remove()
 
+    def _update_common_parameter_visibility(self):
+        kind = self.recipe_kind.get()
+        remove_mode = remove_mode_id_from_label(self.remove_mode.get())
+        shows_machine_parameters = kind == "machine" or (kind == "remove" and remove_mode == "machine")
+        shows_machine_recipe_parameters = kind == "machine"
+        shows_furnace_parameters = kind == "furnace"
+        self._set_grid_visible(
+            [self.template_label_widget, self.template_combo, self.recipe_map_label_widget, self.recipe_map_combo],
+            shows_machine_parameters,
+        )
+        self._set_grid_visible([self.xp_label_widget, self.xp_entry], shows_furnace_parameters)
+        self._set_grid_visible(
+            [self.duration_label_widget, self.duration_entry, self.eut_label_widget, self.eut_entry],
+            shows_machine_recipe_parameters,
+        )
+        self._set_grid_visible(
+            [self.no_fluid_inputs_checkbox, self.no_fluid_outputs_checkbox],
+            shows_machine_recipe_parameters,
+        )
+
+    def _update_fluid_visibility(self):
+        kind = self.recipe_kind.get()
+        remove_mode = remove_mode_id_from_label(self.remove_mode.get())
+        show_inputs = kind == "machine" or (kind == "remove" and remove_mode == "machine")
+        show_outputs = kind == "machine"
+        self._set_pack_visible(self.fluid_inputs, show_inputs)
+        self._set_pack_visible(self.fluid_outputs, show_outputs)
+
     def _update_parameter_visibility(self):
         self._update_remove_options_visibility()
         self._update_minetweaker_options_visibility()
+        self._update_common_parameter_visibility()
+        self._update_fluid_visibility()
+
+    def _set_grid_visible(self, widgets, visible: bool):
+        for widget in widgets:
+            if visible:
+                widget.grid()
+            else:
+                widget.grid_remove()
+
+    def _set_pack_visible(self, widget, visible: bool):
+        if visible:
+            if widget.winfo_manager() != "pack":
+                widget.pack(fill=tk.X, pady=4)
+        else:
+            if widget.winfo_manager() == "pack":
+                widget.pack_forget()
 
     def _on_template_selected(self):
         self.recipe_map.set(recipe_map_label(self._default_recipe_map(self.template_id.get())))
