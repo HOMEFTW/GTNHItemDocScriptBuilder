@@ -184,6 +184,21 @@ class ZsGeneratorTest(unittest.TestCase):
         self.assertNotIn(".fluidInputs(", script)
         self.assertNotIn(".fluidOutputs(", script)
 
+    def test_generates_gt_recipe_with_output_chances(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:iron_ore>")],
+            item_outputs=[self.item("<minecraft:iron_ingot>"), self.item("<minecraft:gold_nugget>")],
+            output_chances=[10000, 2500],
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+
+        self.assertIn(".itemOutputs([<minecraft:iron_ingot>, <minecraft:gold_nugget>])", script)
+        self.assertIn(".outputChances([10000, 2500])", script)
+
     def test_generates_gt_recipe_remover(self):
         draft = RecipeDraft(
             kind="machine_remove",

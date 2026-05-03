@@ -91,6 +91,7 @@ class SlotButton(ttk.Button):
     def __init__(self, parent, label: str, on_select: Callable[["SlotButton"], None]):
         super().__init__(parent, text=label, command=lambda: on_select(self), width=12)
         self.item: Optional[ScriptItem] = None
+        self.output_chance = 10000
         self.default_label = label
 
     def set_item(self, item: Optional[ScriptItem]):
@@ -102,6 +103,7 @@ class SlotButton(ttk.Button):
 
     def clear(self):
         self.set_item(None)
+        self.output_chance = 10000
 
 
 class SlotGridFrame(ttk.LabelFrame):

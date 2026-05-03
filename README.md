@@ -31,11 +31,12 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - GTNH / 模组机器模板配方
 - 矿物字典输入 `<ore:...>`
 - 物品数量 `*0` 和 `.withTag(...)` 后缀
+- RA2 `.outputChances(...)` 输出概率
 - RA2 `.noFluidInputs()` / `.noFluidOutputs()` 开关
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，燃料为 1 个输入且无输出，GTNH/模组机器为 16 个物品输入加 4 个物品输出。机器模板支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 模板参考 ModTweaker 的 logger 输出；GT 机器模板参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder 语法：
 
-点击任意物品格后，中间的“选中物品格”区域可以编辑数量和后缀。数量允许 `0`，用于 GT 编程电路或模具这类 `<...> * 0` 输入；后缀会直接拼接到物品表达式之后，可填写 `.withTag(...)` 这类 NBT 表达式。
+点击任意物品格后，中间的“选中物品格”区域可以编辑数量和后缀。数量允许 `0`，用于 GT 编程电路或模具这类 `<...> * 0` 输入；后缀会直接拼接到物品表达式之后，可填写 `.withTag(...)` 这类 NBT 表达式。GTNH/模组机器模式下选中输出格时，还可以填写“输出概率”，单位为 GT 常用的 `10000 = 100%`，会生成 RA2 的 `.outputChances([...])`。
 
 删除模式下会显示“删除类型”子选项，可选择有序、无序、熔炉或 GT，并切换到对应的独立配方格界面。
 

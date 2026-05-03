@@ -36,6 +36,7 @@ class RecipeDraft:
     kind: str
     item_inputs: List[Optional[ScriptItem]] = field(default_factory=list)
     item_outputs: List[Optional[ScriptItem]] = field(default_factory=list)
+    output_chances: List[int] = field(default_factory=list)
     fluid_inputs: List[ScriptFluid] = field(default_factory=list)
     fluid_outputs: List[ScriptFluid] = field(default_factory=list)
     duration: int = 200

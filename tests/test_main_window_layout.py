@@ -218,6 +218,28 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_machine_output_slot_can_edit_output_chance(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            slot = window.active_output_grid.slots[0]
+            slot.set_item(ScriptItem("<minecraft:gold_nugget>"))
+            window._select_slot(slot)
+
+            self.assertEqual("输出概率:", window.output_chance_label_widget.cget("text"))
+            self.assertTrue(window.output_chance_label_widget.grid_info())
+            window.output_chance_var.set("2500")
+            draft = window._draft()
+
+            self.assertEqual([2500], draft.output_chances)
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

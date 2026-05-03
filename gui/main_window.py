@@ -78,6 +78,7 @@ class MainWindow:
         self.fuel_ticks_var = tk.StringVar(value="1600")
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
+        self.output_chance_var = tk.StringVar(value="10000")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
         self.no_fluid_inputs = tk.BooleanVar(value=False)
@@ -92,6 +93,7 @@ class MainWindow:
         self._syncing_selected_item_options = False
         self.selected_item_amount.trace_add("write", lambda *_: self._apply_selected_item_options())
         self.selected_item_suffix.trace_add("write", lambda *_: self._apply_selected_item_options())
+        self.output_chance_var.trace_add("write", lambda *_: self._apply_selected_output_chance())
         self._create_widgets()
         self._try_load_default_index()
 
@@ -185,6 +187,10 @@ class MainWindow:
         ttk.Label(item_options, text="后缀:").grid(row=0, column=2, sticky=tk.W, padx=(0, 4), pady=2)
         self.selected_item_suffix_entry = ttk.Entry(item_options, textvariable=self.selected_item_suffix)
         self.selected_item_suffix_entry.grid(row=0, column=3, sticky=tk.EW, pady=2)
+        self.output_chance_label_widget = ttk.Label(item_options, text="输出概率:")
+        self.output_chance_label_widget.grid(row=1, column=0, sticky=tk.W, padx=(0, 4), pady=2)
+        self.output_chance_entry = ttk.Entry(item_options, textvariable=self.output_chance_var, width=10)
+        self.output_chance_entry.grid(row=1, column=1, sticky=tk.W, padx=(0, 8), pady=2)
         item_options.columnconfigure(3, weight=1)
 
         params = ttk.LabelFrame(parent, text="参数", padding=5)
@@ -304,6 +310,7 @@ class MainWindow:
         self.active_input_grid, self.active_output_grid = self.slot_editors.get(layout_key, self.slot_editors["shaped"])
         self.selected_slot = None
         self._sync_selected_item_options()
+        self._update_output_chance_visibility()
 
     def _choose_index(self):
         path = choose_item_index(self.root, self.config.item_index_path)
@@ -367,6 +374,7 @@ class MainWindow:
     def _select_slot(self, slot: SlotButton):
         self.selected_slot = slot
         self._sync_selected_item_options()
+        self._update_output_chance_visibility()
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
     def _on_recipe_kind_selected(self):
@@ -507,6 +515,8 @@ class MainWindow:
             item = self.selected_slot.item if self.selected_slot else None
             self.selected_item_amount.set(str(item.amount if item else 1))
             self.selected_item_suffix.set(item.suffix if item else "")
+            chance = self.selected_slot.output_chance if self.selected_slot else 10000
+            self.output_chance_var.set(str(chance))
         finally:
             self._syncing_selected_item_options = False
 
@@ -530,6 +540,35 @@ class MainWindow:
             )
         )
         self._refresh_preview()
+
+    def _apply_selected_output_chance(self):
+        if self._syncing_selected_item_options:
+            return
+        if not self._selected_slot_is_machine_output():
+            return
+        try:
+            chance = int(self.output_chance_var.get() or "0")
+        except ValueError:
+            self.status_var.set("输出概率必须是整数，10000 表示 100%")
+            return
+        self.selected_slot.output_chance = chance
+        self._refresh_preview()
+
+    def _selected_slot_is_machine_output(self) -> bool:
+        return (
+            self.recipe_kind.get() == "machine"
+            and self.selected_slot is not None
+            and self.active_output_grid is not None
+            and self.selected_slot in self.active_output_grid.slots
+        )
+
+    def _update_output_chance_visibility(self):
+        if self._selected_slot_is_machine_output():
+            self.output_chance_label_widget.grid()
+            self.output_chance_entry.grid()
+        else:
+            self.output_chance_label_widget.grid_remove()
+            self.output_chance_entry.grid_remove()
 
     def _choose_fluid(self, target: FluidListFrame):
         if self.fluid_store is None:
@@ -559,6 +598,7 @@ class MainWindow:
             kind=self.recipe_kind.get(),
             item_inputs=input_grid.items(),
             item_outputs=output_grid.items(),
+            output_chances=self._output_chances(output_grid),
             fluid_inputs=self.fluid_inputs.fluids(),
             fluid_outputs=self.fluid_outputs.fluids(),
             duration=int(self.duration_var.get() or "0"),
@@ -573,6 +613,11 @@ class MainWindow:
             no_fluid_inputs=bool(self.no_fluid_inputs.get()),
             no_fluid_outputs=bool(self.no_fluid_outputs.get()),
         )
+
+    def _output_chances(self, output_grid: SlotGridFrame) -> list[int]:
+        if self.recipe_kind.get() != "machine":
+            return []
+        return [slot.output_chance for slot in output_grid.slots if slot.item is not None]
 
     def _refresh_preview(self):
         try:

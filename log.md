@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-05-03: RA2 输出概率支持
+
+### Completed
+- 为 `RecipeDraft` 增加 `output_chances`。
+- GTNH/模组机器生成器支持 `.outputChances([...])`，未填写概率时保持旧脚本格式不变。
+- 输出格保存独立 `output_chance`，默认 `10000` 表示 `100%`。
+- GUI 在 GTNH/模组机器模式下选中输出格时显示“输出概率”，选中输入格或其他脚本类型时隐藏。
+- 补充生成器和 GUI 测试。
+
+### Issues Encountered
+- **输出概率只对 GT RA2 输出有效**：普通合成、熔炉和输入格不应显示该控件 → 显隐绑定到“机器模式 + 当前选中输出格”。
+
+### Decisions Made
+- 使用 GregTech 常用概率单位 `10000 = 100%`，不做百分号换算，避免和真实 `.zs` 脚本数值不一致。
+
+---
+
 ## 2026-05-03: 参数和流体区按能力显示
 
 ### Completed

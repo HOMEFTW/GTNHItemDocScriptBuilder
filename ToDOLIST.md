@@ -3,7 +3,7 @@
 ## Next Priorities
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
-- [ ] Add RA2 optional fields from the wiki and real scripts: `.outputChances(...)`, `.noOptimize()`, `.specialValue(...)`, `.specialItem(...)`.
+- [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`, `.specialValue(...)`, `.specialItem(...)`.
 - [ ] Improve `RecipeRemover.remove` editor for multi-line item/fluid input removal.
 - [ ] Add import/parse support for existing `.zs` scripts so complete scripts like `ZZZ-NxerCustoms.zs` can seed GUI drafts.
 
@@ -38,6 +38,7 @@
 
 ## Completed
 
+- [x] 增加 RA2 `.outputChances(...)` 输出概率支持，GT 机器输出格可按 `10000 = 100%` 编辑概率。
 - [x] 修复参数和流体区的脚本类型显隐：有序/无序不显示流体，机器和 GT 删除才显示对应流体能力。
 - [x] 让 MineTweaker 专项参数按脚本类型显示：镜像只在有序、XP 只在熔炉、燃烧时间只在燃料。
 - [x] 将 MineTweaker 参数区的新控件左对齐，避免“写入熔炉 XP”等选项离左边太远。
