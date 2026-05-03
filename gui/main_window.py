@@ -441,15 +441,38 @@ class MainWindow:
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
     def _on_recipe_kind_selected(self):
+        input_items, output_items, output_chances = self._active_slot_state()
         self._show_slot_editor(self.recipe_kind.get())
+        self._replace_active_slot_state(input_items, output_items, output_chances)
         self._update_parameter_visibility()
         self._refresh_preview()
 
     def _on_remove_mode_selected(self):
+        input_items, output_items, output_chances = self._active_slot_state()
         if self.recipe_kind.get() == "remove":
             self._show_slot_editor("remove")
+            self._replace_active_slot_state(input_items, output_items, output_chances)
         self._update_parameter_visibility()
         self._refresh_preview()
+
+    def _active_slot_state(self):
+        input_items = self.active_input_grid.items() if self.active_input_grid else []
+        output_items = self.active_output_grid.items() if self.active_output_grid else []
+        output_chances = [slot.output_chance for slot in self.active_output_grid.slots] if self.active_output_grid else []
+        return input_items, output_items, output_chances
+
+    def _replace_active_slot_state(self, input_items, output_items, output_chances):
+        if self.active_input_grid:
+            self.active_input_grid.clear()
+            self._set_grid_items(self.active_input_grid, input_items)
+        if self.active_output_grid:
+            self.active_output_grid.clear()
+            self._set_grid_items(self.active_output_grid, output_items)
+            for slot, chance in zip(self.active_output_grid.slots, output_chances):
+                slot.output_chance = chance
+        self.selected_slot = None
+        self._sync_selected_item_options()
+        self._update_output_chance_visibility()
 
     def _update_remove_options_visibility(self):
         if self.recipe_kind.get() == "remove":

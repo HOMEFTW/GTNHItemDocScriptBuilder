@@ -285,6 +285,35 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_switching_script_type_does_not_restore_hidden_old_preview(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            window.active_input_grid.slots[0].set_item(ScriptItem("<minecraft:piston>"))
+            window.active_output_grid.slots[0].set_item(ScriptItem("<minecraft:bucket>"))
+            window._refresh_preview()
+            self.assertIn("<minecraft:piston>", window.preview.get_text())
+
+            window.recipe_kind.set("shapeless")
+            window._on_recipe_kind_selected()
+            window.active_input_grid.slots[0].set_item(ScriptItem("<minecraft:planks>"))
+            window.active_output_grid.slots[0].set_item(ScriptItem("<minecraft:stick>", 4))
+            window._refresh_preview()
+            self.assertIn("<minecraft:planks>", window.preview.get_text())
+
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+
+            self.assertNotIn("<minecraft:piston>", window.preview.get_text())
+            self.assertIn("<minecraft:planks>", window.preview.get_text())
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
     def test_machine_output_slot_can_edit_output_chance(self):
         original_loader = MainWindow._try_load_default_index
         MainWindow._try_load_default_index = lambda _self: None

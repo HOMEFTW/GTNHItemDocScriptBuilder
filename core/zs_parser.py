@@ -9,28 +9,23 @@ from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
 
 def parse_zs_script(script: str) -> RecipeDraft:
     text = script.strip()
-    if "mods.gregtech.RecipeRemover.remove" in text:
-        return _parse_gt_remover(text)
-    if "mods.gregtech.RA2" in text and ".builder()" in text:
-        return _parse_gt_machine(text)
-    if "furnace.setFuel" in text:
-        return _parse_fuel(text)
-    if "furnace.addRecipe" in text:
-        return _parse_furnace(text)
-    if "furnace.remove" in text:
-        return _parse_furnace_remove(text)
-    if "recipes.addShapedMirrored" in text:
-        return _parse_shaped(text, mirrored=True)
-    if "recipes.addShaped" in text:
-        return _parse_shaped(text, mirrored=False)
-    if "recipes.addShapeless" in text:
-        return _parse_shapeless(text)
-    if "recipes.removeShaped" in text:
-        return _parse_simple_remove(text, "shaped")
-    if "recipes.removeShapeless" in text:
-        return _parse_simple_remove(text, "shapeless")
-    if "recipes.remove" in text:
-        return _parse_simple_remove(text, "all")
+    candidates = [
+        ("mods.gregtech.RecipeRemover.remove", lambda value: _parse_gt_remover(value)),
+        ("mods.gregtech.RA2", lambda value: _parse_gt_machine(value)),
+        ("furnace.setFuel", lambda value: _parse_fuel(value)),
+        ("furnace.addRecipe", lambda value: _parse_furnace(value)),
+        ("furnace.remove", lambda value: _parse_furnace_remove(value)),
+        ("recipes.addShapedMirrored", lambda value: _parse_shaped(value, mirrored=True)),
+        ("recipes.addShaped", lambda value: _parse_shaped(value, mirrored=False)),
+        ("recipes.addShapeless", lambda value: _parse_shapeless(value)),
+        ("recipes.removeShaped", lambda value: _parse_simple_remove(value, "shaped")),
+        ("recipes.removeShapeless", lambda value: _parse_simple_remove(value, "shapeless")),
+        ("recipes.remove", lambda value: _parse_simple_remove(value, "all")),
+    ]
+    found = [(position, index, parser) for index, (needle, parser) in enumerate(candidates) if (position := text.find(needle)) >= 0]
+    if found:
+        _position, _index, parser = min(found)
+        return parser(text)
     raise ValueError("未找到可导入的受支持 ZS 配方")
 
 

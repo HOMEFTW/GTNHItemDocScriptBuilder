@@ -39,6 +39,17 @@ class ZsParserTest(unittest.TestCase):
         self.assertEqual(320, parsed.duration)
         self.assertEqual(120, parsed.eut)
 
+    def test_parses_first_supported_recipe_by_script_order(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>], []);'
+        )
+
+        parsed = parse_zs_script(script)
+
+        self.assertEqual("shapeless", parsed.kind)
+        self.assertEqual("<minecraft:stick>", parsed.item_outputs[0].expression)
+
     def test_parses_gt_recipe_remover_for_reediting_after_restart(self):
         script = (
             'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", '
