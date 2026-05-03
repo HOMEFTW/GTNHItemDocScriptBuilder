@@ -111,6 +111,7 @@ class MainWindow:
         self.preview = PreviewFrame(panes)
         self.preview.configure(width=PREVIEW_PANE_WIDTH)
         self.preview.pack_propagate(False)
+        self.preview.grid_propagate(False)
         panes.add(self.preview, weight=PREVIEW_PANE_WEIGHT)
         self._refresh_preview()
 

@@ -53,3 +53,4 @@
 - [x] Keep left search and right preview panes fixed-width so the center editor keeps the usable space.
 - [x] Shift about one third of the center editor width back to the left search pane.
 - [x] Add vertical and horizontal scrollbars to the ZS preview panel.
+- [x] Prevent the preview scrollbars from expanding the preview pane and squeezing the editor.

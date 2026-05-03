@@ -30,6 +30,7 @@ class MainWindowLayoutTest(unittest.TestCase):
             window = MainWindow()
             self.assertEqual(SEARCH_PANE_WIDTH, int(window.search_frame.cget("width")))
             self.assertEqual(PREVIEW_PANE_WIDTH, int(window.preview.cget("width")))
+            self.assertFalse(window.preview.grid_propagate())
             window.recipe_kind.set("remove")
             window._on_recipe_kind_selected()
 
