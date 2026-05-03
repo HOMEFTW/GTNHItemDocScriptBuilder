@@ -2,7 +2,7 @@ import unittest
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
 from core.zs_generator import ZsGenerator
-from core.zs_parser import parse_zs_script
+from core.zs_parser import parse_zs_script, parse_zs_script_with_source
 
 
 class ZsParserTest(unittest.TestCase):
@@ -49,6 +49,32 @@ class ZsParserTest(unittest.TestCase):
 
         self.assertEqual("shapeless", parsed.kind)
         self.assertEqual("<minecraft:stick>", parsed.item_outputs[0].expression)
+
+    def test_reports_imported_recipe_source_line(self):
+        script = (
+            "// header\n"
+            "\n"
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>], []);'
+        )
+
+        parsed = parse_zs_script_with_source(script)
+
+        self.assertEqual("shapeless", parsed.draft.kind)
+        self.assertEqual(1, parsed.recipe_number)
+        self.assertEqual(3, parsed.line_number)
+        self.assertEqual("recipes.addShapeless", parsed.marker)
+
+    def test_source_recipe_number_counts_repeated_supported_calls(self):
+        script = (
+            "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+            "recipes.addShapeless(<minecraft:torch> * 4, [<minecraft:coal>, <minecraft:stick>]);\n"
+        )
+
+        parsed = parse_zs_script_with_source(script)
+
+        self.assertEqual(1, parsed.recipe_number)
+        self.assertEqual(1, parsed.line_number)
 
     def test_parses_gt_recipe_remover_for_reediting_after_restart(self):
         script = (

@@ -285,6 +285,31 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_loaded_script_keeps_full_file_above_generated_saved_content(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+            script = (
+                "// full file header\n"
+                "recipes.addShapeless(<minecraft:stick> * 4, [<minecraft:planks>]);\n"
+                'mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>], []);'
+            )
+
+            window._load_script_text(script, "test.zs")
+
+            self.assertIn("// full file header", window.preview.get_full_text())
+            self.assertIn("RecipeRemover.remove", window.preview.get_full_text())
+            self.assertIn("recipes.addShapeless", window.preview.get_text())
+            self.assertNotIn("RecipeRemover.remove", window.preview.get_text())
+            self.assertIn("test.zs", window.preview.full_file_frame.cget("text"))
+            self.assertIn("第 1 条", window.preview.generated_frame.cget("text"))
+            self.assertIn("行 2", window.preview.generated_frame.cget("text"))
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
     def test_switching_script_type_does_not_restore_hidden_old_preview(self):
         original_loader = MainWindow._try_load_default_index
         MainWindow._try_load_default_index = lambda _self: None

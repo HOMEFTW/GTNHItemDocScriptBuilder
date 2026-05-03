@@ -127,33 +127,64 @@ class SlotGridFrame(ttk.LabelFrame):
 class PreviewFrame(ttk.LabelFrame):
     def __init__(self, parent):
         super().__init__(parent, text="ZS 预览", padding=5)
-        self.text = tk.Text(
-            self,
+        self.full_file_frame, self.full_text, self.full_vertical_scrollbar, self.full_horizontal_scrollbar = (
+            self._create_text_panel("完整 .zs 文件（未导入）")
+        )
+        self.generated_frame, self.generated_text, self.generated_vertical_scrollbar, self.generated_horizontal_scrollbar = (
+            self._create_text_panel("保存内容 / 当前草稿")
+        )
+        self.full_file_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=(0, 3))
+        self.generated_frame.grid(row=1, column=0, sticky=tk.NSEW, pady=(3, 0))
+        self.rowconfigure(0, weight=1, uniform="preview")
+        self.rowconfigure(1, weight=1, uniform="preview")
+        self.columnconfigure(0, weight=1)
+        self.text = self.generated_text
+        self.vertical_scrollbar = self.generated_vertical_scrollbar
+        self.horizontal_scrollbar = self.generated_horizontal_scrollbar
+
+    def _create_text_panel(self, title: str):
+        frame = ttk.LabelFrame(self, text=title, padding=5)
+        text = tk.Text(
+            frame,
             wrap=tk.NONE,
-            height=24,
+            height=10,
             font=("Consolas", 10),
             background="#ffffff",
             foreground="#111111",
             insertbackground="#111111",
         )
-        self.vertical_scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
-        self.horizontal_scrollbar = ttk.Scrollbar(self, orient=tk.HORIZONTAL, command=self.text.xview)
-        self.text.configure(
-            yscrollcommand=self.vertical_scrollbar.set,
-            xscrollcommand=self.horizontal_scrollbar.set,
+        vertical_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text.yview)
+        horizontal_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=text.xview)
+        text.configure(
+            yscrollcommand=vertical_scrollbar.set,
+            xscrollcommand=horizontal_scrollbar.set,
         )
-        self.text.grid(row=0, column=0, sticky=tk.NSEW)
-        self.vertical_scrollbar.grid(row=0, column=1, sticky=tk.NS)
-        self.horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+        text.grid(row=0, column=0, sticky=tk.NSEW)
+        vertical_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+        return frame, text, vertical_scrollbar, horizontal_scrollbar
+
+    def set_full_text(self, value: str):
+        self.full_text.delete("1.0", tk.END)
+        self.full_text.insert(tk.END, value)
+
+    def get_full_text(self) -> str:
+        return self.full_text.get("1.0", tk.END).rstrip()
+
+    def set_full_label(self, label: str):
+        self.full_file_frame.configure(text=f"完整 .zs 文件: {label}")
+
+    def set_source_label(self, label: str):
+        self.generated_frame.configure(text=f"保存内容 / {label}")
 
     def set_text(self, value: str):
-        self.text.delete("1.0", tk.END)
-        self.text.insert(tk.END, value)
+        self.generated_text.delete("1.0", tk.END)
+        self.generated_text.insert(tk.END, value)
 
     def get_text(self) -> str:
-        return self.text.get("1.0", tk.END).rstrip()
+        return self.generated_text.get("1.0", tk.END).rstrip()
 
 
 class FluidSearchDialog(tk.Toplevel):

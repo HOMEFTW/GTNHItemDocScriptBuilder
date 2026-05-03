@@ -27,7 +27,7 @@ from core.templates import (
     template_options,
 )
 from core.zs_generator import ZsGenerator
-from core.zs_parser import parse_zs_script
+from core.zs_parser import parse_zs_script_with_source
 from gui.dialogs import choose_import_script_file, choose_item_index, choose_script_file, show_error, show_info
 from gui.widgets import (
     FluidListFrame,
@@ -86,6 +86,7 @@ class MainWindow:
         self.output_chance_var = tk.StringVar(value="10000")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
+        self.current_draft_source = "当前草稿"
         self.no_fluid_inputs = tk.BooleanVar(value=False)
         self.no_fluid_outputs = tk.BooleanVar(value=False)
         self.no_fluid_inputs.trace_add("write", lambda *_: self._refresh_preview())
@@ -774,12 +775,23 @@ class MainWindow:
         if not path:
             return
         try:
-            draft = parse_zs_script(Path(path).read_text(encoding="utf-8-sig"))
-            self._load_draft(draft)
+            script_text = Path(path).read_text(encoding="utf-8-sig")
+            self._load_script_text(script_text, Path(path).name)
             self.config.script_output_dir = str(Path(path).parent)
             self.status_var.set(f"已导入 {Path(path).name}，可以继续编辑")
         except Exception as exc:
             show_error("导入失败", str(exc))
+
+    def _load_script_text(self, script_text: str, filename: str):
+        parsed = parse_zs_script_with_source(script_text)
+        self.preview.set_full_text(script_text)
+        self.preview.set_full_label(filename)
+        self.current_draft_source = (
+            f"当前草稿: {filename} 第 {parsed.recipe_number} 条受支持配方，"
+            f"行 {parsed.line_number} ({parsed.marker})"
+        )
+        self.preview.set_source_label(self.current_draft_source)
+        self._load_draft(parsed.draft)
 
     def _load_draft(self, draft: RecipeDraft):
         self._clear_all_slots()

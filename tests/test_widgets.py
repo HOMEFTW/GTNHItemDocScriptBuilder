@@ -59,10 +59,27 @@ class PreviewFrameTest(unittest.TestCase):
     def test_preview_text_has_both_scrollbars(self):
         frame = PreviewFrame(self.root)
 
-        self.assertTrue(frame.text.cget("yscrollcommand"))
-        self.assertTrue(frame.text.cget("xscrollcommand"))
-        self.assertEqual("vertical", str(frame.vertical_scrollbar.cget("orient")))
-        self.assertEqual("horizontal", str(frame.horizontal_scrollbar.cget("orient")))
+        self.assertTrue(frame.full_text.cget("yscrollcommand"))
+        self.assertTrue(frame.full_text.cget("xscrollcommand"))
+        self.assertTrue(frame.generated_text.cget("yscrollcommand"))
+        self.assertTrue(frame.generated_text.cget("xscrollcommand"))
+        self.assertEqual("vertical", str(frame.full_vertical_scrollbar.cget("orient")))
+        self.assertEqual("horizontal", str(frame.full_horizontal_scrollbar.cget("orient")))
+        self.assertEqual("vertical", str(frame.generated_vertical_scrollbar.cget("orient")))
+        self.assertEqual("horizontal", str(frame.generated_horizontal_scrollbar.cget("orient")))
+
+    def test_preview_frame_splits_full_file_and_saved_content(self):
+        frame = PreviewFrame(self.root)
+
+        frame.set_full_text("recipes.remove(<minecraft:dirt>);")
+        frame.set_text("recipes.addShapeless(<minecraft:stick>, [<minecraft:planks>]);")
+        frame.set_source_label("当前草稿: 第 1 条受支持配方，行 1")
+
+        self.assertEqual("recipes.remove(<minecraft:dirt>);", frame.get_full_text())
+        self.assertIn("完整 .zs 文件", frame.full_file_frame.cget("text"))
+        self.assertIn("保存内容", frame.generated_frame.cget("text"))
+        self.assertIn("第 1 条", frame.generated_frame.cget("text"))
+        self.assertIn("recipes.addShapeless", frame.get_text())
 
 
 class OreDictionarySearchDialogTest(unittest.TestCase):

@@ -21,7 +21,7 @@
 | 左侧物品搜索 | `gui.widgets.ItemSearchFrame` | 已支持中文名、英文名、注册 ID 搜索，并带横向滚动条 |
 | 中间配方编辑 | `gui.main_window.MainWindow` | 已支持有序、无序、熔炉、燃料、删除、GTNH/模组机器布局；GT 机器为 16 输入 + 9 输出 |
 | 选中物品格编辑 | `gui.main_window.MainWindow` | 已支持数量 `0`、`.withTag(...)` 后缀，以及 GT 机器输出概率 |
-| 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已支持横向和竖向滚动条 |
+| 右侧 ZS 预览 | `gui.widgets.PreviewFrame` | 已分为上下两半：完整 `.zs` 文件原文和当前草稿保存内容，两区均有横向和竖向滚动条 |
 | 流体搜索 | `gui.widgets.FluidSearchDialog` | 已支持流体输入/输出行搜索填入 |
 | GT 删除流体输入 | `gui.widgets.FluidListRowsFrame` | 已支持 4 行流体输入，每行可搜索、填写数量和清空 |
 | OreDict 搜索 | `gui.widgets.OreDictionarySearchDialog` | 已支持 `<ore:...>` 搜索并填入当前输入格 |
@@ -73,3 +73,4 @@
 - `.zs` 导入是 MVP 级静态解析：不执行 ZenScript，只解析第一条匹配的受支持配方，目标是让保存后的脚本在程序重启后能导入继续编辑。
 - ZS 预览只代表当前一份草稿；脚本类型切换时会迁移当前格子到新布局，避免隐藏布局恢复旧草稿造成“不同类型不同预览”的错觉。
 - `.zs` 导入按脚本出现顺序选择第一条受支持配方，不再用固定类型优先级抢先解析后面的调用。
+- 右侧上半区保留完整导入文件，右侧下半区显示保存按钮会写出的当前草稿内容，并在标题中显示文件名、受支持配方序号、行号和调用类型。

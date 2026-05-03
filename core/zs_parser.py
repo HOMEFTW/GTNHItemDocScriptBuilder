@@ -2,13 +2,26 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Optional
 
 from core.recipe_model import RecipeDraft, ScriptFluid, ScriptItem
 
 
+@dataclass(frozen=True)
+class ParsedRecipe:
+    draft: RecipeDraft
+    recipe_number: int
+    line_number: int
+    marker: str
+
+
 def parse_zs_script(script: str) -> RecipeDraft:
-    text = script.strip()
+    return parse_zs_script_with_source(script).draft
+
+
+def parse_zs_script_with_source(script: str) -> ParsedRecipe:
+    text = script
     candidates = [
         ("mods.gregtech.RecipeRemover.remove", lambda value: _parse_gt_remover(value)),
         ("mods.gregtech.RA2", lambda value: _parse_gt_machine(value)),
@@ -22,10 +35,21 @@ def parse_zs_script(script: str) -> RecipeDraft:
         ("recipes.removeShapeless", lambda value: _parse_simple_remove(value, "shapeless")),
         ("recipes.remove", lambda value: _parse_simple_remove(value, "all")),
     ]
-    found = [(position, index, parser) for index, (needle, parser) in enumerate(candidates) if (position := text.find(needle)) >= 0]
+    found = []
+    for index, (marker, parser) in enumerate(candidates):
+        start = 0
+        while (position := text.find(marker, start)) >= 0:
+            found.append((position, index, marker, parser))
+            start = position + len(marker)
     if found:
-        _position, _index, parser = min(found)
-        return parser(text)
+        position, _index, marker, parser = min(found)
+        ordered_positions = sorted(candidate[0] for candidate in found)
+        return ParsedRecipe(
+            draft=parser(text),
+            recipe_number=ordered_positions.index(position) + 1,
+            line_number=text.count("\n", 0, position) + 1,
+            marker=marker,
+        )
     raise ValueError("未找到可导入的受支持 ZS 配方")
 
 
