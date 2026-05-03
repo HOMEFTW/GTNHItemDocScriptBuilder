@@ -39,7 +39,7 @@ from gui.widgets import (
 )
 
 
-MIN_WINDOW_SIZE = (1400, 760)
+MIN_WINDOW_SIZE = (1400, 900)
 # UI priority: preserve this three-pane balance before adding new controls.
 SEARCH_PANE_WIDTH = 580
 PREVIEW_PANE_WIDTH = 400

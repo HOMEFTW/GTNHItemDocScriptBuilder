@@ -55,3 +55,4 @@
 - [x] Support ore dictionary expressions such as `<ore:stickWood>` and `<ore:dustClay>` as first-class selectable inputs.
 - [x] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
 - [x] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.
+- [x] Increase GUI window height so newly added editor controls are visible.

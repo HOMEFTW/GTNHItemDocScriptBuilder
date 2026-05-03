@@ -1,5 +1,21 @@
 # Development Log
 
+## 2026-05-03: 增加 GUI 窗口高度
+
+### Completed
+- 将默认窗口从 `1500x860` 调整为 `1500x920`。
+- 将主窗口最小高度从 `760` 调整为 `900`。
+- 将旧配置归一化的默认最小高度调整为 `900`，避免 `config.json` 中保存的 `1200x820` 继续让窗口偏矮。
+- 更新窗口高度相关测试和文档。
+
+### Issues Encountered
+- **旧配置会覆盖默认窗口高度**：`config.json` 里保存了较矮窗口尺寸 → 通过提高 `normalize_window_geometry` 的 `min_height` 解决。
+
+### Decisions Made
+- 只增加高度，不调整左侧 `580px`、右侧 `400px` 和中间栏权重，继续保护既定三栏比例。
+
+---
+
 ## 2026-05-03: 物品数量和 NBT 后缀支持
 
 ### Completed

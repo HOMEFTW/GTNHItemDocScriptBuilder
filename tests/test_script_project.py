@@ -25,17 +25,17 @@ class ScriptProjectTest(unittest.TestCase):
         self.assertEqual("gt.recipe.mixer", loaded.last_recipe_map)
 
     def test_window_geometry_is_wide_enough_for_three_panes(self):
-        self.assertEqual("1500x820", normalize_window_geometry("1200x820", min_width=1500, min_height=760))
-        self.assertEqual("1500x760+10+20", normalize_window_geometry("900x600+10+20", min_width=1500, min_height=760))
+        self.assertEqual("1500x900", normalize_window_geometry("1200x820", min_width=1500, min_height=900))
+        self.assertEqual("1500x900+10+20", normalize_window_geometry("900x600+10+20", min_width=1500, min_height=900))
         self.assertEqual(
             "1600x900",
-            normalize_window_geometry("1600x900", min_width=1500, min_height=760, max_width=1800),
+            normalize_window_geometry("1600x900", min_width=1500, min_height=900, max_width=1800),
         )
 
     def test_default_window_geometry_prioritizes_wide_editor(self):
-        self.assertEqual("1500x860", DEFAULT_WINDOW_GEOMETRY)
-        self.assertEqual("1500x860", normalize_window_geometry("1500x860"))
-        self.assertEqual("1500x760+10+20", normalize_window_geometry("1200x600+10+20"))
+        self.assertEqual("1500x920", DEFAULT_WINDOW_GEOMETRY)
+        self.assertEqual("1500x920", normalize_window_geometry("1500x920"))
+        self.assertEqual("1500x900+10+20", normalize_window_geometry("1200x600+10+20"))
         self.assertEqual("1500x900", normalize_window_geometry("1700x900"))
 
     def test_saved_overwide_geometry_is_normalized_on_load(self):
@@ -44,7 +44,7 @@ class ScriptProjectTest(unittest.TestCase):
 
         loaded = AppConfig.load(path)
 
-        self.assertEqual("1500x860", loaded.window_geometry)
+        self.assertEqual("1500x900", loaded.window_geometry)
 
     def test_save_script_creates_parent_directory(self):
         target = self.output_dir / "scripts" / "generated.zs"

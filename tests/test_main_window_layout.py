@@ -23,7 +23,7 @@ class MainWindowLayoutTest(unittest.TestCase):
 
     def test_minimum_window_is_wide_enough_for_editor_controls(self):
         self.assertEqual(1400, MIN_WINDOW_SIZE[0])
-        self.assertGreaterEqual(MIN_WINDOW_SIZE[1], 760)
+        self.assertGreaterEqual(MIN_WINDOW_SIZE[1], 900)
 
     def test_remove_mode_shows_layout_selector(self):
         original_loader = MainWindow._try_load_default_index
