@@ -133,7 +133,17 @@ class PreviewFrame(ttk.LabelFrame):
             foreground="#111111",
             insertbackground="#111111",
         )
-        self.text.pack(fill=tk.BOTH, expand=True)
+        self.vertical_scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
+        self.horizontal_scrollbar = ttk.Scrollbar(self, orient=tk.HORIZONTAL, command=self.text.xview)
+        self.text.configure(
+            yscrollcommand=self.vertical_scrollbar.set,
+            xscrollcommand=self.horizontal_scrollbar.set,
+        )
+        self.text.grid(row=0, column=0, sticky=tk.NSEW)
+        self.vertical_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        self.horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
     def set_text(self, value: str):
         self.text.delete("1.0", tk.END)

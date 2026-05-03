@@ -52,3 +52,4 @@
 - [x] Rename the remove sub-option label to "删除布局" and verify its layout selector is visible.
 - [x] Keep left search and right preview panes fixed-width so the center editor keeps the usable space.
 - [x] Shift about one third of the center editor width back to the left search pane.
+- [x] Add vertical and horizontal scrollbars to the ZS preview panel.

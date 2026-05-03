@@ -1,7 +1,7 @@
 import tkinter as tk
 import unittest
 
-from gui.widgets import FluidListFrame, ItemSearchFrame
+from gui.widgets import FluidListFrame, ItemSearchFrame, PreviewFrame
 
 
 class ItemSearchFrameTest(unittest.TestCase):
@@ -32,6 +32,23 @@ class FluidListFrameTest(unittest.TestCase):
 
         self.assertEqual(1, frame.amount_entry.grid_info()["row"])
         self.assertEqual("ew", str(frame.fluid_entry.grid_info()["sticky"]).lower())
+
+
+class PreviewFrameTest(unittest.TestCase):
+    def setUp(self):
+        self.root = tk.Tk()
+        self.root.withdraw()
+
+    def tearDown(self):
+        self.root.destroy()
+
+    def test_preview_text_has_both_scrollbars(self):
+        frame = PreviewFrame(self.root)
+
+        self.assertTrue(frame.text.cget("yscrollcommand"))
+        self.assertTrue(frame.text.cget("xscrollcommand"))
+        self.assertEqual("vertical", str(frame.vertical_scrollbar.cget("orient")))
+        self.assertEqual("horizontal", str(frame.horizontal_scrollbar.cget("orient")))
 
 
 if __name__ == "__main__":
