@@ -46,3 +46,4 @@
 - [x] Split recipe slot UI by script type: shaped/shapeless `3 x 3 + 1`, furnace `1 + 1`, machine `16 + 4`.
 - [x] Add delete-mode sub options for shaped, shapeless, furnace, and GT layouts.
 - [x] Widen the center editor pane and compact slot buttons so recipe controls remain visible.
+- [x] Add a horizontal scrollbar to the left item search results table.

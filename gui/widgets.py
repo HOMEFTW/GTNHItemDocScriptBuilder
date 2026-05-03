@@ -24,8 +24,11 @@ class ItemSearchFrame(ttk.Frame):
         ttk.Label(top, text="搜索物品:").pack(side=tk.LEFT)
         ttk.Entry(top, textvariable=self.query_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
+        table = ttk.Frame(self)
+        table.pack(fill=tk.BOTH, expand=True)
+
         columns = ("chinese", "english", "ct", "id", "meta", "block")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings", height=18)
+        self.tree = ttk.Treeview(table, columns=columns, show="headings", height=18)
         headings = {
             "chinese": "中文名",
             "english": "英文名",
@@ -39,10 +42,17 @@ class ItemSearchFrame(ttk.Frame):
             self.tree.heading(key, text=headings[key])
             self.tree.column(key, width=widths[key], anchor=tk.W)
 
-        scroll = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscrollcommand=scroll.set)
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        vertical_scrollbar = ttk.Scrollbar(table, orient=tk.VERTICAL, command=self.tree.yview)
+        self.horizontal_scrollbar = ttk.Scrollbar(table, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(
+            yscrollcommand=vertical_scrollbar.set,
+            xscrollcommand=self.horizontal_scrollbar.set,
+        )
+        self.tree.grid(row=0, column=0, sticky=tk.NSEW)
+        vertical_scrollbar.grid(row=0, column=1, sticky=tk.NS)
+        self.horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
+        table.rowconfigure(0, weight=1)
+        table.columnconfigure(0, weight=1)
         self.tree.bind("<Double-Button-1>", self._on_double_click)
         self.tree.bind("<Button-3>", self._copy_focused_expression)
 
