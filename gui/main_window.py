@@ -5,6 +5,7 @@ from tkinter import ttk
 
 from core.fluid_index import FluidEntry, FluidIndexStore, default_fluid_index_path
 from core.item_index import ItemEntry, ItemIndexStore
+from core.recipe_layout import LAYOUTS
 from core.recipe_model import RecipeDraft, ScriptItem
 from core.script_project import AppConfig, save_script
 from core.templates import (
@@ -34,6 +35,10 @@ class MainWindow:
         self.fluid_store: FluidIndexStore | None = None
         self.generator = ZsGenerator()
         self.selected_slot: SlotButton | None = None
+        self.active_input_grid: SlotGridFrame | None = None
+        self.active_output_grid: SlotGridFrame | None = None
+        self.slot_editor_frames: dict[str, ttk.Frame] = {}
+        self.slot_editors: dict[str, tuple[SlotGridFrame, SlotGridFrame]] = {}
         self.recipe_kind = tk.StringVar(value="shaped")
         self.template_id = tk.StringVar(value=self.config.last_template)
         initial_recipe_map = self.config.last_recipe_map or self._default_recipe_map(self.config.last_template)
@@ -102,15 +107,17 @@ class MainWindow:
             ("GTNH/模组机器", "machine"),
         ]
         for text, value in modes:
-            ttk.Radiobutton(mode, text=text, variable=self.recipe_kind, value=value, command=self._refresh_preview).pack(
-                side=tk.LEFT,
-                padx=(0, 8),
-            )
+            ttk.Radiobutton(
+                mode,
+                text=text,
+                variable=self.recipe_kind,
+                value=value,
+                command=self._on_recipe_kind_selected,
+            ).pack(side=tk.LEFT, padx=(0, 8))
 
-        self.input_grid = SlotGridFrame(parent, "输入格 16 格（有序合成使用前 9 格）", 16, 4, self._select_slot)
-        self.input_grid.pack(fill=tk.X, pady=4)
-        self.output_grid = SlotGridFrame(parent, "输出格 4 格（普通配方使用第 1 格）", 4, 4, self._select_slot)
-        self.output_grid.pack(fill=tk.X, pady=4)
+        self.slot_area = ttk.Frame(parent)
+        self.slot_area.pack(fill=tk.X, pady=4)
+        self._create_slot_editors(self.slot_area)
 
         params = ttk.LabelFrame(parent, text="参数", padding=5)
         params.pack(fill=tk.X)
@@ -156,6 +163,37 @@ class MainWindow:
         self.fluid_outputs = FluidListFrame(parent, "流体输出", self._choose_fluid, self._refresh_preview)
         self.fluid_outputs.pack(fill=tk.X, pady=4)
         self._set_fluid_search_enabled(False)
+        self._show_slot_editor(self.recipe_kind.get())
+
+    def _create_slot_editors(self, parent):
+        for kind, layout in LAYOUTS.items():
+            frame = ttk.Frame(parent)
+            input_grid = SlotGridFrame(
+                frame,
+                layout.input_title,
+                layout.input_count,
+                layout.input_columns,
+                self._select_slot,
+            )
+            input_grid.pack(fill=tk.X, pady=4)
+            output_grid = SlotGridFrame(
+                frame,
+                layout.output_title,
+                layout.output_count,
+                layout.output_columns,
+                self._select_slot,
+            )
+            output_grid.pack(fill=tk.X, pady=4)
+            self.slot_editor_frames[kind] = frame
+            self.slot_editors[kind] = (input_grid, output_grid)
+
+    def _show_slot_editor(self, kind: str):
+        for frame in self.slot_editor_frames.values():
+            frame.pack_forget()
+        frame = self.slot_editor_frames.get(kind) or self.slot_editor_frames["shaped"]
+        frame.pack(fill=tk.X)
+        self.active_input_grid, self.active_output_grid = self.slot_editors.get(kind, self.slot_editors["shaped"])
+        self.selected_slot = None
 
     def _choose_index(self):
         path = choose_item_index(self.root, self.config.item_index_path)
@@ -202,6 +240,10 @@ class MainWindow:
         self.selected_slot = slot
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
 
+    def _on_recipe_kind_selected(self):
+        self._show_slot_editor(self.recipe_kind.get())
+        self._refresh_preview()
+
     def _on_template_selected(self):
         self.recipe_map.set(recipe_map_label(self._default_recipe_map(self.template_id.get())))
         self._refresh_preview()
@@ -238,10 +280,12 @@ class MainWindow:
             self.fluid_outputs.set_search_enabled(enabled)
 
     def _draft(self) -> RecipeDraft:
+        input_grid = self.active_input_grid or self.slot_editors["shaped"][0]
+        output_grid = self.active_output_grid or self.slot_editors["shaped"][1]
         return RecipeDraft(
             kind=self.recipe_kind.get(),
-            item_inputs=self.input_grid.items(),
-            item_outputs=self.output_grid.items(),
+            item_inputs=input_grid.items(),
+            item_outputs=output_grid.items(),
             fluid_inputs=self.fluid_inputs.fluids(),
             fluid_outputs=self.fluid_outputs.fluids(),
             duration=int(self.duration_var.get() or "0"),
@@ -277,8 +321,10 @@ class MainWindow:
             show_error("保存失败", str(exc))
 
     def _clear_slots(self):
-        self.input_grid.clear()
-        self.output_grid.clear()
+        if self.active_input_grid:
+            self.active_input_grid.clear()
+        if self.active_output_grid:
+            self.active_output_grid.clear()
         self.selected_slot = None
         self._refresh_preview()
         self.status_var.set("已清空配方格")

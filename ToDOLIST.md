@@ -43,3 +43,4 @@
 
 - [x] Add `fluid_index.json` export in `GTNHItemDocExporter` from Forge `FluidRegistry`.
 - [x] Load `fluid_index.json` in the GUI and make fluid input/output rows searchable like items.
+- [x] Split recipe slot UI by script type: shaped/shapeless `3 x 3 + 1`, furnace `1 + 1`, machine `16 + 4`.
