@@ -16,6 +16,8 @@ python main.py
 D:\Code\gtnh_item_doc_exporter\item_index.json
 ```
 
+如果同目录存在 `fluid_index.json`，GUI 会自动加载流体索引。GTNH/模组机器模板中的“流体输入”和“流体输出”可以点击“搜索”，按中文名、`fluidName` 或 `<liquid:...>` 表达式查找流体，双击后填入当前流体行。
+
 ## 支持脚本
 
 - 有序合成

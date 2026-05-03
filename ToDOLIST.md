@@ -2,8 +2,6 @@
 
 ## Next Priorities
 
-- [ ] Add `fluid_index.json` export in `GTNHItemDocExporter` from Forge `FluidRegistry`.
-- [ ] Load `fluid_index.json` in the GUI and make fluid input/output rows searchable like items.
 - [ ] Support ore dictionary expressions such as `<ore:stickWood>` and `<ore:dustClay>` as first-class selectable inputs.
 - [ ] Support item expressions with amount `*0`, used by GT molds and integrated circuits in RA2 recipes.
 - [ ] Support output/input NBT expressions such as `.withTag({baseCapacity: 4611686018427385856 as long})`.
@@ -40,3 +38,8 @@
 - `furnace.addRecipe` 在真实脚本里有两参数写法；GUI 可以保留 XP 字段，但生成器需要支持“不写 XP”的选项。
 - 现有 GUI 的 recipe map 选择是正确方向，因为真实脚本在 assembler、extruder、electrolyzer、largechemicalreactor、distillationtower、brewer、multielectro 等多张 map 间切换非常频繁。
 - 完整 `.zs` 导入功能值得做：先不追求编辑所有语法，至少可以解析 RA2 块、CraftTweaker 合成、furnace、RecipeRemover，生成可继续编辑的草稿。
+
+## Completed
+
+- [x] Add `fluid_index.json` export in `GTNHItemDocExporter` from Forge `FluidRegistry`.
+- [x] Load `fluid_index.json` in the GUI and make fluid input/output rows searchable like items.

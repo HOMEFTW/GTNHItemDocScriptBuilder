@@ -3,6 +3,7 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
 
+from core.fluid_index import FluidEntry, FluidIndexStore, default_fluid_index_path
 from core.item_index import ItemEntry, ItemIndexStore
 from core.recipe_model import RecipeDraft, ScriptItem
 from core.script_project import AppConfig, save_script
@@ -15,7 +16,7 @@ from core.templates import (
 )
 from core.zs_generator import ZsGenerator
 from gui.dialogs import choose_item_index, choose_script_file, show_error, show_info
-from gui.widgets import FluidListFrame, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
+from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
 
 
 class MainWindow:
@@ -30,6 +31,7 @@ class MainWindow:
         self.root.geometry(self.config.window_geometry)
         self.root.minsize(1000, 680)
         self.store: ItemIndexStore | None = None
+        self.fluid_store: FluidIndexStore | None = None
         self.generator = ZsGenerator()
         self.selected_slot: SlotButton | None = None
         self.recipe_kind = tk.StringVar(value="shaped")
@@ -149,10 +151,11 @@ class MainWindow:
             width=12,
         ).grid(row=5, column=1, sticky=tk.W, pady=2)
 
-        self.fluid_inputs = FluidListFrame(parent, "流体输入")
+        self.fluid_inputs = FluidListFrame(parent, "流体输入", self._choose_fluid, self._refresh_preview)
         self.fluid_inputs.pack(fill=tk.X, pady=4)
-        self.fluid_outputs = FluidListFrame(parent, "流体输出")
+        self.fluid_outputs = FluidListFrame(parent, "流体输出", self._choose_fluid, self._refresh_preview)
         self.fluid_outputs.pack(fill=tk.X, pady=4)
+        self._set_fluid_search_enabled(False)
 
     def _choose_index(self):
         path = choose_item_index(self.root, self.config.item_index_path)
@@ -166,11 +169,27 @@ class MainWindow:
     def _load_index(self, path: str):
         try:
             self.store = ItemIndexStore.load(path)
+            fluid_status = self._load_fluid_index(path)
             self.config.item_index_path = path
             self.search_frame.set_entries(self.store.search("", limit=500))
-            self.status_var.set(f"已加载 {self.store.entry_count} 条，语言 {self.store.language}")
+            self.status_var.set(f"已加载 {self.store.entry_count} 条物品/方块{fluid_status}，语言 {self.store.language}")
         except Exception as exc:
             show_error("加载失败", str(exc))
+
+    def _load_fluid_index(self, item_index_path: str) -> str:
+        fluid_path = default_fluid_index_path(item_index_path)
+        if not fluid_path.exists():
+            self.fluid_store = None
+            self._set_fluid_search_enabled(False)
+            return "，未找到流体索引"
+        try:
+            self.fluid_store = FluidIndexStore.load(fluid_path)
+            self._set_fluid_search_enabled(True)
+            return f"，{self.fluid_store.entry_count} 个流体"
+        except Exception as exc:
+            self.fluid_store = None
+            self._set_fluid_search_enabled(False)
+            return f"，流体索引加载失败：{exc}"
 
     def _search(self, query: str):
         if self.store is None:
@@ -200,6 +219,23 @@ class MainWindow:
         self.selected_slot.set_item(ScriptItem(entry.ct_expression, 1, entry.chinese_name))
         self.status_var.set(f"已填入 {entry.chinese_name or entry.registry_id}")
         self._refresh_preview()
+
+    def _choose_fluid(self, target: FluidListFrame):
+        if self.fluid_store is None:
+            self.status_var.set("未加载 fluid_index.json，请选择包含流体索引的导出目录中的 item_index.json")
+            return
+        FluidSearchDialog(self.root, self.fluid_store, lambda entry: self._pick_fluid(target, entry))
+
+    def _pick_fluid(self, target: FluidListFrame, entry: FluidEntry):
+        target.set_fluid(entry)
+        self.status_var.set(f"已填入流体 {entry.chinese_name or entry.fluid_name}")
+        self._refresh_preview()
+
+    def _set_fluid_search_enabled(self, enabled: bool):
+        if hasattr(self, "fluid_inputs"):
+            self.fluid_inputs.set_search_enabled(enabled)
+        if hasattr(self, "fluid_outputs"):
+            self.fluid_outputs.set_search_enabled(enabled)
 
     def _draft(self) -> RecipeDraft:
         return RecipeDraft(

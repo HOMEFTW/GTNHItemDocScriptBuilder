@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-03T09:00:53+0800",
+  "minecraftVersion": "1.7.10",
+  "language": "zh_CN",
+  "entryCount": 3,
+  "entries": [
+    {
+      "fluidName": "water",
+      "ctExpression": "<liquid:water>",
+      "chineseName": "水",
+      "englishName": "fluid.tile.water.name",
+      "unlocalizedName": "fluid.tile.water",
+      "temperature": 300,
+      "density": 1000,
+      "viscosity": 1000,
+      "gaseous": false,
+      "guid": "water"
+    },
+    {
+      "fluidName": "liquid helium",
+      "ctExpression": "<liquid:liquid helium>",
+      "chineseName": "液氦",
+      "englishName": "fluid.liquid helium.name",
+      "unlocalizedName": "fluid.liquid helium",
+      "temperature": 300,
+      "density": 1000,
+      "viscosity": 1000,
+      "gaseous": false,
+      "guid": "liquid helium"
+    },
+    {
+      "fluidName": "molten.siliconsolargrade",
+      "ctExpression": "<liquid:molten.siliconsolargrade>",
+      "chineseName": "熔融太阳能级硅(多晶硅)",
+      "englishName": "fluid.molten.siliconsolargrade.name",
+      "unlocalizedName": "fluid.molten.siliconsolargrade",
+      "temperature": 2273,
+      "density": 1000,
+      "viscosity": 1000,
+      "gaseous": false,
+      "guid": "molten.siliconsolargrade"
+    }
+  ]
+}

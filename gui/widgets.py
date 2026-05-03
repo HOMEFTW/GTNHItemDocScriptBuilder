@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, List, Optional
 
+from core.fluid_index import FluidEntry, FluidIndexStore
 from core.item_index import ItemEntry
 from core.recipe_model import ScriptFluid, ScriptItem
 
@@ -132,17 +133,111 @@ class PreviewFrame(ttk.LabelFrame):
         return self.text.get("1.0", tk.END).rstrip()
 
 
+class FluidSearchDialog(tk.Toplevel):
+    def __init__(self, parent, store: FluidIndexStore, on_pick: Callable[[FluidEntry], None]):
+        super().__init__(parent)
+        self.store = store
+        self.on_pick = on_pick
+        self.entries: List[FluidEntry] = []
+        self.query_var = tk.StringVar()
+        self.query_var.trace_add("write", lambda *_: self._search())
+        self.title("选择流体")
+        self.geometry("760x420")
+        self.transient(parent)
+        self.grab_set()
+        self._create_widgets()
+        self._search()
+        self.query_entry.focus_set()
+
+    def _create_widgets(self):
+        root = ttk.Frame(self, padding=8)
+        root.pack(fill=tk.BOTH, expand=True)
+        top = ttk.Frame(root)
+        top.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(top, text="搜索流体:").pack(side=tk.LEFT)
+        self.query_entry = ttk.Entry(top, textvariable=self.query_var)
+        self.query_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        columns = ("chinese", "fluid", "ct", "temperature", "gaseous")
+        self.tree = ttk.Treeview(root, columns=columns, show="headings", height=16)
+        headings = {
+            "chinese": "中文名",
+            "fluid": "Fluid Name",
+            "ct": "CT 表达式",
+            "temperature": "温度",
+            "gaseous": "气体",
+        }
+        widths = {"chinese": 180, "fluid": 190, "ct": 230, "temperature": 60, "gaseous": 52}
+        for key in columns:
+            self.tree.heading(key, text=headings[key])
+            self.tree.column(key, width=widths[key], anchor=tk.W)
+        scroll = ttk.Scrollbar(root, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scroll.set)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.bind("<Double-Button-1>", self._on_double_click)
+        self.tree.bind("<Return>", self._on_double_click)
+
+    def _search(self):
+        self.set_entries(self.store.search(self.query_var.get(), limit=500))
+
+    def set_entries(self, entries: List[FluidEntry]):
+        self.entries = entries
+        self.tree.delete(*self.tree.get_children())
+        for index, entry in enumerate(entries):
+            self.tree.insert(
+                "",
+                tk.END,
+                iid=str(index),
+                values=(
+                    entry.chinese_name,
+                    entry.fluid_name,
+                    entry.ct_expression,
+                    entry.temperature,
+                    "是" if entry.gaseous else "否",
+                ),
+            )
+
+    def _on_double_click(self, _event):
+        item_id = self.tree.focus()
+        if item_id:
+            self.on_pick(self.entries[int(item_id)])
+            self.destroy()
+
+
 class FluidListFrame(ttk.LabelFrame):
-    def __init__(self, parent, text: str):
+    def __init__(
+        self,
+        parent,
+        text: str,
+        on_search: Callable[["FluidListFrame"], None],
+        on_change: Callable[[], None],
+    ):
         super().__init__(parent, text=text, padding=5)
+        self.on_search = on_search
+        self.on_change = on_change
         self.name_var = tk.StringVar()
         self.amount_var = tk.StringVar(value="1000")
+        self.name_var.trace_add("write", lambda *_: self.on_change())
+        self.amount_var.trace_add("write", lambda *_: self.on_change())
         row = ttk.Frame(self)
         row.pack(fill=tk.X)
         ttk.Label(row, text="流体:").pack(side=tk.LEFT)
-        ttk.Entry(row, textvariable=self.name_var, width=18).pack(side=tk.LEFT, padx=2)
+        ttk.Entry(row, textvariable=self.name_var, width=24).pack(side=tk.LEFT, padx=2)
+        self.search_button = ttk.Button(row, text="搜索", command=lambda: self.on_search(self))
+        self.search_button.pack(side=tk.LEFT, padx=2)
+        ttk.Button(row, text="清空", command=self.clear).pack(side=tk.LEFT, padx=2)
         ttk.Label(row, text="数量:").pack(side=tk.LEFT, padx=(8, 0))
         ttk.Entry(row, textvariable=self.amount_var, width=8).pack(side=tk.LEFT, padx=2)
+
+    def set_search_enabled(self, enabled: bool):
+        self.search_button.configure(state=tk.NORMAL if enabled else tk.DISABLED)
+
+    def set_fluid(self, entry: FluidEntry):
+        self.name_var.set(entry.ct_expression)
+
+    def clear(self):
+        self.name_var.set("")
 
     def fluids(self) -> List[ScriptFluid]:
         name = self.name_var.get().strip()
