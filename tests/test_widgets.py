@@ -1,7 +1,7 @@
 import tkinter as tk
 import unittest
 
-from gui.widgets import ItemSearchFrame
+from gui.widgets import FluidListFrame, ItemSearchFrame
 
 
 class ItemSearchFrameTest(unittest.TestCase):
@@ -17,6 +17,21 @@ class ItemSearchFrameTest(unittest.TestCase):
 
         self.assertTrue(frame.tree.cget("xscrollcommand"))
         self.assertEqual("horizontal", str(frame.horizontal_scrollbar.cget("orient")))
+
+
+class FluidListFrameTest(unittest.TestCase):
+    def setUp(self):
+        self.root = tk.Tk()
+        self.root.withdraw()
+
+    def tearDown(self):
+        self.root.destroy()
+
+    def test_amount_field_uses_its_own_row(self):
+        frame = FluidListFrame(self.root, "流体输入", lambda _target: None, lambda: None)
+
+        self.assertEqual(1, frame.amount_entry.grid_info()["row"])
+        self.assertEqual("ew", str(frame.fluid_entry.grid_info()["sticky"]).lower())
 
 
 if __name__ == "__main__":

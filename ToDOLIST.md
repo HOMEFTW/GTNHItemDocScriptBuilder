@@ -48,3 +48,6 @@
 - [x] Widen the center editor pane and compact slot buttons so recipe controls remain visible.
 - [x] Add a horizontal scrollbar to the left item search results table.
 - [x] Increase the default window width and make the center editor pane the primary layout area.
+- [x] Rework fluid rows so the amount field stays visible without making the whole window too wide.
+- [x] Rename the remove sub-option label to "删除布局" and verify its layout selector is visible.
+- [x] Keep left search and right preview panes fixed-width so the center editor keeps the usable space.

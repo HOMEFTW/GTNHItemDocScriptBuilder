@@ -26,10 +26,12 @@ from gui.dialogs import choose_item_index, choose_script_file, show_error, show_
 from gui.widgets import FluidListFrame, FluidSearchDialog, ItemSearchFrame, PreviewFrame, SlotButton, SlotGridFrame
 
 
-MIN_WINDOW_SIZE = (1500, 760)
-SEARCH_PANE_WEIGHT = 1
-EDITOR_PANE_WEIGHT = 5
-PREVIEW_PANE_WEIGHT = 2
+MIN_WINDOW_SIZE = (1400, 760)
+SEARCH_PANE_WIDTH = 320
+PREVIEW_PANE_WIDTH = 400
+SEARCH_PANE_WEIGHT = 0
+EDITOR_PANE_WEIGHT = 6
+PREVIEW_PANE_WEIGHT = 0
 
 
 class MainWindow:
@@ -98,6 +100,8 @@ class MainWindow:
         panes.pack(fill=tk.BOTH, expand=True, pady=6)
 
         self.search_frame = ItemSearchFrame(panes, self._search, self._pick_item)
+        self.search_frame.configure(width=SEARCH_PANE_WIDTH)
+        self.search_frame.pack_propagate(False)
         panes.add(self.search_frame, weight=SEARCH_PANE_WEIGHT)
 
         editor = ttk.Frame(panes)
@@ -105,6 +109,8 @@ class MainWindow:
         self._create_editor(editor)
 
         self.preview = PreviewFrame(panes)
+        self.preview.configure(width=PREVIEW_PANE_WIDTH)
+        self.preview.pack_propagate(False)
         panes.add(self.preview, weight=PREVIEW_PANE_WEIGHT)
         self._refresh_preview()
 
@@ -161,7 +167,7 @@ class MainWindow:
         ttk.Entry(params, textvariable=self.duration_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=2)
         ttk.Label(params, text="EU/t:").grid(row=4, column=0, sticky=tk.W, pady=2)
         ttk.Entry(params, textvariable=self.eut_var, width=10).grid(row=4, column=1, sticky=tk.W, pady=2)
-        self.remove_mode_label_widget = ttk.Label(params, text="删除类型:")
+        self.remove_mode_label_widget = ttk.Label(params, text="删除布局:")
         self.remove_mode_label_widget.grid(row=5, column=0, sticky=tk.W, pady=2)
         self.remove_mode_combo = ttk.Combobox(
             params,

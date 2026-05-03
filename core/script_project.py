@@ -6,7 +6,7 @@ import re
 from utils.helpers import load_json, save_json
 
 
-DEFAULT_WINDOW_GEOMETRY = "1700x900"
+DEFAULT_WINDOW_GEOMETRY = "1500x860"
 
 
 @dataclass
@@ -43,11 +43,16 @@ def save_script(path: str | Path, content: str) -> None:
     target.write_text(content, encoding="utf-8")
 
 
-def normalize_window_geometry(geometry: str, min_width: int = 1700, min_height: int = 760) -> str:
+def normalize_window_geometry(
+    geometry: str,
+    min_width: int = 1500,
+    min_height: int = 760,
+    max_width: int = 1500,
+) -> str:
     match = re.match(r"^(\d+)x(\d+)([+-]\d+[+-]\d+)?$", geometry.strip())
     if not match:
         return DEFAULT_WINDOW_GEOMETRY
-    width = max(int(match.group(1)), min_width)
+    width = min(max(int(match.group(1)), min_width), max_width)
     height = max(int(match.group(2)), min_height)
     offset = match.group(3) or ""
     return f"{width}x{height}{offset}"
