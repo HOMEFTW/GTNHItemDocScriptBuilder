@@ -42,6 +42,7 @@ class RecipeDraft:
     duration: int = 200
     eut: int = 30
     special_value: Optional[int] = None
+    special_item: Optional[ScriptItem] = None
     xp: float = 0.0
     include_furnace_xp: bool = True
     shaped_mirrored: bool = False

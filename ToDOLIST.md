@@ -3,7 +3,7 @@
 ## Next Priorities
 
 - [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
-- [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`, `.specialItem(...)`.
+- [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`.
 - [ ] Improve `RecipeRemover.remove` editor for multi-line item/fluid input removal.
 - [ ] Add import/parse support for existing `.zs` scripts so complete scripts like `ZZZ-NxerCustoms.zs` can seed GUI drafts.
 
@@ -38,6 +38,7 @@
 
 ## Completed
 
+- [x] 增加 RA2 `.specialItem(...)` 支持，可从当前选中的物品格复制物品、数量和后缀。
 - [x] 增加 RA2 `.specialValue(...)` 支持，GT 机器参数区可填写整数 special value。
 - [x] 增加 RA2 `.outputChances(...)` 输出概率支持，GT 机器输出格可按 `10000 = 100%` 编辑概率。
 - [x] 修复参数和流体区的脚本类型显隐：有序/无序不显示流体，机器和 GT 删除才显示对应流体能力。

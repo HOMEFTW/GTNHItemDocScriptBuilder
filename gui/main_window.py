@@ -79,6 +79,8 @@ class MainWindow:
         self.duration_var = tk.StringVar(value="200")
         self.eut_var = tk.StringVar(value="30")
         self.special_value_var = tk.StringVar(value="")
+        self.special_item: ScriptItem | None = None
+        self.special_item_var = tk.StringVar(value="")
         self.output_chance_var = tk.StringVar(value="10000")
         self.remove_mode = tk.StringVar(value=remove_mode_label("shaped"))
         self.status_var = tk.StringVar(value="准备加载物品索引")
@@ -239,6 +241,22 @@ class MainWindow:
         self.special_value_label_widget.grid(row=5, column=0, sticky=tk.W, pady=2)
         self.special_value_entry = ttk.Entry(params, textvariable=self.special_value_var, width=10)
         self.special_value_entry.grid(row=5, column=1, sticky=tk.W, pady=2)
+        self.special_item_label_widget = ttk.Label(params, text="Special Item:")
+        self.special_item_label_widget.grid(row=10, column=0, sticky=tk.W, pady=2)
+        self.special_item_entry = ttk.Entry(params, textvariable=self.special_item_var, width=42, state="readonly")
+        self.special_item_entry.grid(row=10, column=1, sticky=tk.W, pady=2)
+        self.special_item_button = ttk.Button(
+            params,
+            text="从当前选中物品填入",
+            command=self._set_special_item_from_selected_slot,
+        )
+        self.special_item_button.grid(row=11, column=0, sticky=tk.W, pady=2)
+        self.special_item_clear_button = ttk.Button(
+            params,
+            text="清空 Special Item",
+            command=self._clear_special_item,
+        )
+        self.special_item_clear_button.grid(row=11, column=1, sticky=tk.E, pady=2)
         self.shaped_mirrored_checkbox = ttk.Checkbutton(
             params,
             text="镜像有序合成",
@@ -438,6 +456,10 @@ class MainWindow:
                 self.eut_entry,
                 self.special_value_label_widget,
                 self.special_value_entry,
+                self.special_item_label_widget,
+                self.special_item_entry,
+                self.special_item_button,
+                self.special_item_clear_button,
             ],
             shows_machine_recipe_parameters,
         )
@@ -617,6 +639,7 @@ class MainWindow:
             duration=int(self.duration_var.get() or "0"),
             eut=int(self.eut_var.get() or "0"),
             special_value=self._special_value(),
+            special_item=self.special_item if self.recipe_kind.get() == "machine" else None,
             xp=float(self.xp_var.get() or "0"),
             include_furnace_xp=bool(self.include_furnace_xp.get()),
             shaped_mirrored=bool(self.shaped_mirrored.get()),
@@ -638,6 +661,20 @@ class MainWindow:
         if not value:
             return None
         return int(value)
+
+    def _set_special_item_from_selected_slot(self):
+        if self.selected_slot is None or self.selected_slot.item is None:
+            self.status_var.set("请先选择一个已有物品的配方格")
+            return
+        item = self.selected_slot.item
+        self.special_item = ScriptItem(item.expression, item.amount, item.comment_name, item.suffix)
+        self.special_item_var.set(self.special_item.to_zs())
+        self._refresh_preview()
+
+    def _clear_special_item(self):
+        self.special_item = None
+        self.special_item_var.set("")
+        self._refresh_preview()
 
     def _refresh_preview(self):
         try:

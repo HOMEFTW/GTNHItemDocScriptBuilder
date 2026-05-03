@@ -129,6 +129,7 @@ class ZsGenerator:
             f"{self._fluid_input_call(draft)}\n"
             f"{self._fluid_output_call(draft)}\n"
             f"{self._special_value_call(draft)}"
+            f"{self._special_item_call(draft)}"
             f"    .duration({draft.duration})\n"
             f"    .eut({draft.eut})\n"
             f"    .addTo(\"{recipe_map}\");"
@@ -188,6 +189,11 @@ class ZsGenerator:
         if draft.special_value is None:
             return ""
         return f"    .specialValue({draft.special_value})\n"
+
+    def _special_item_call(self, draft: RecipeDraft) -> str:
+        if draft.special_item is None:
+            return ""
+        return f"    .specialItem({draft.special_item.to_zs()})\n"
 
     def _fluid_input_call(self, draft: RecipeDraft) -> str:
         if draft.no_fluid_inputs:

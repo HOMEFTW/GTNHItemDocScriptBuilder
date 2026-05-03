@@ -264,6 +264,35 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
+    def test_machine_parameters_can_fill_special_item_from_selected_slot(self):
+        original_loader = MainWindow._try_load_default_index
+        MainWindow._try_load_default_index = lambda _self: None
+        try:
+            window = MainWindow()
+
+            self.assertFalse(window.special_item_label_widget.grid_info())
+            window.recipe_kind.set("machine")
+            window._on_recipe_kind_selected()
+            slot = window.active_input_grid.slots[0]
+            slot.set_item(ScriptItem("<gregtech:gt.integrated_circuit:24>", 0, "", ".withTag({mode: 1})"))
+            window._select_slot(slot)
+            window._set_special_item_from_selected_slot()
+            draft = window._draft()
+
+            self.assertEqual("Special Item:", window.special_item_label_widget.cget("text"))
+            self.assertTrue(window.special_item_label_widget.grid_info())
+            self.assertEqual(
+                "<gregtech:gt.integrated_circuit:24>.withTag({mode: 1}) * 0",
+                window.special_item_var.get(),
+            )
+            self.assertEqual("<gregtech:gt.integrated_circuit:24>", draft.special_item.expression)
+            self.assertEqual(0, draft.special_item.amount)
+            self.assertEqual(".withTag({mode: 1})", draft.special_item.suffix)
+        finally:
+            MainWindow._try_load_default_index = original_loader
+            if "window" in locals():
+                window.root.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

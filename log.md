@@ -1,5 +1,22 @@
 # Development Log
 
+## 2026-05-03: RA2 Special Item 支持
+
+### Completed
+- 为 `RecipeDraft` 增加可选 `special_item`。
+- GTNH/模组机器生成器支持 `.specialItem(item)`，空值时不生成该调用。
+- GUI 在 GTNH/模组机器参数区增加 `Special Item` 行，可从当前选中物品格复制物品、数量和后缀。
+- 增加清空 `Special Item` 按钮。
+- 补充生成器和 GUI 测试。
+
+### Issues Encountered
+- **`specialItem` 需要复用物品表达式能力**：手写容易丢失 `*0` 和 `.withTag(...)` → 直接复制现有 `ScriptItem`。
+
+### Decisions Made
+- `Special Item` 只在 GTNH/模组机器显示；切换其他脚本类型时不参与生成。
+
+---
+
 ## 2026-05-03: RA2 Special Value 支持
 
 ### Completed

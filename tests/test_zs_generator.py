@@ -213,6 +213,20 @@ class ZsGeneratorTest(unittest.TestCase):
 
         self.assertIn(".specialValue(42)", script)
 
+    def test_generates_gt_recipe_with_special_item(self):
+        draft = RecipeDraft(
+            kind="machine",
+            template_id="assembler_like",
+            item_inputs=[self.item("<minecraft:iron_ingot>")],
+            item_outputs=[self.item("<minecraft:bucket>")],
+            special_item=self.item("<gregtech:gt.integrated_circuit:24>", 0),
+            duration=200,
+            eut=30,
+        )
+        script = self.generator.generate(draft)
+
+        self.assertIn(".specialItem(<gregtech:gt.integrated_circuit:24> * 0)", script)
+
     def test_generates_gt_recipe_remover(self):
         draft = RecipeDraft(
             kind="machine_remove",
