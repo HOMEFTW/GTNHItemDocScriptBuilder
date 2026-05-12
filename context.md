@@ -2,7 +2,7 @@
 
 ## Basic Info
 - Project Name: GTNHItemDocScriptBuilder
-- Version: 1.0.0
+- Version: 1.2.0
 - Studio: Andgatech
 - Type: Tkinter desktop GUI
 - Purpose: 使用 `GTNHItemDocExporter` 导出的索引生成 CraftTweaker / ModTweaker / GTNH `.zs` 脚本。

@@ -3,11 +3,11 @@
 `GTNHItemDocScriptBuilder` 是一个 Tkinter 桌面 GUI 工具，用 [`GTNHItemDocExporter`](https://github.com/HOMEFTW/GTNHItemDocExporter) 导出的索引文件生成和维护 CraftTweaker / ModTweaker / GregTech `.zs` 脚本。
 
 - GitHub：<https://github.com/HOMEFTW/GTNHItemDocScriptBuilder>
-- 当前版本：`1.0.0`
+- 当前版本：`1.2.0`
 - 工作室：`Andgatech`
 - 配套导出模组：[`GTNHItemDocExporter`](https://github.com/HOMEFTW/GTNHItemDocExporter)
 
-应用信息可通过窗口右上角“关于”按钮查看：`GTNHItemDocScriptBuilder`，版本 `1.0.0`，工作室 `Andgatech`。
+应用信息可通过窗口右上角”关于”按钮查看：`GTNHItemDocScriptBuilder`，版本 `1.2.0`，工作室 `Andgatech`。
 
 ## 项目关系
 
@@ -69,7 +69,17 @@ D:\Code\gtnh_item_doc_exporter\item_index.json
 - RA2 `.specialValue(...)`
 - RA2 `.specialItem(...)`
 - RA2 `.noFluidInputs()` / `.noFluidOutputs()` 开关
+- RA2 `.noItemInputs()` / `.noItemOutputs()` 开关
 - 导入 `.zs`、按当前脚本类型解析到 GUI、配方列表点击解析、脚本草稿列表、智能摘要、自动中文注释、解析模式下切换类型自动重解析、在当前类型配方间上一条/下一条导航、按位置添加草稿到完整脚本、替换原配方
+- 单行紧凑格式输出（勾选"单行格式"）
+- 全屏脚本编辑器（行号、查找替换、语法高亮、实时同步预览区）
+- 搜索防抖、物品/方块过滤、最近使用记录
+- 键盘快捷键（Ctrl+S/Z/Y/G/D、Ctrl+←/→）
+- 配方格视觉状态（选中蓝色、已填绿色、概率黄色）
+- 工具栏分组分隔符、按钮悬浮提示
+- 右键上下文菜单（搜索结果、配方格、预览区）
+- ZS 语法高亮（注释、字符串、数字、关键字、方法、尖括号表达式）
+- 草稿列表"锁定参数"批量编写模式
 
 不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，燃料为 1 个输入且无输出，GTNH/模组机器为 16 个物品输入加 9 个物品输出。机器生成方式支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 生成方式参考 ModTweaker 的 logger 输出；GT 机器使用统一的 `GT RA2` 生成方式，具体机器由 `Recipe Map` 决定，语法参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder：
 

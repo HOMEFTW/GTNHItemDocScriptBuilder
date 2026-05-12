@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox, ttk
 
 
 APP_NAME = "GTNHItemDocScriptBuilder"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.2.0"
 APP_STUDIO = "Andgatech"
 
 

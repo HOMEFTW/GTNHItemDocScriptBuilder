@@ -117,24 +117,33 @@ class ZsGenerator:
     def _generic_gt(self, draft: RecipeDraft) -> str:
         template = TEMPLATES[normalize_template_id(draft.template_id)]
         outputs = self._present_items(draft.item_outputs)
-        if not outputs:
+        if not draft.no_item_outputs and not outputs:
             raise ValueError("GTNH machine template needs at least one item output")
         recipe_map = self._recipe_map(draft, template)
-        return (
-            f"// GTNH RA2 recipe map: {recipe_map}\n"
-            "mods.gregtech.RA2\n"
-            "    .builder()\n"
-            f"    .itemInputs({self._item_array(self._present_items(draft.item_inputs))})\n"
-            f"    .itemOutputs({self._item_array(outputs)})\n"
-            f"{self._output_chances_call(draft, len(outputs))}"
-            f"{self._fluid_input_call(draft)}\n"
-            f"{self._fluid_output_call(draft)}\n"
-            f"{self._special_value_call(draft)}"
-            f"{self._special_item_call(draft)}"
-            f"    .duration({draft.duration})\n"
-            f"    .eut({draft.eut})\n"
-            f"    .addTo(\"{recipe_map}\");"
-        )
+        parts = [
+            "mods.gregtech.RA2",
+            ".builder()",
+            self._item_input_call(draft).strip(),
+            self._item_output_call(draft, outputs).strip(),
+        ]
+        chances_line = self._output_chances_call(draft, len(outputs)).strip()
+        if chances_line:
+            parts.append(chances_line)
+        parts.append(self._fluid_input_call(draft).strip())
+        parts.append(self._fluid_output_call(draft).strip())
+        special_val = self._special_value_call(draft).strip()
+        if special_val:
+            parts.append(special_val)
+        special_itm = self._special_item_call(draft).strip()
+        if special_itm:
+            parts.append(special_itm)
+        parts.append(f".duration({draft.duration})")
+        parts.append(f".eut({draft.eut})")
+        parts.append(f".addTo(\"{recipe_map}\")")
+        if draft.compact_format:
+            return "".join(parts) + ";"
+        indent = "\n    "
+        return parts[0] + indent + indent.join(parts[1:]) + ";"
 
     def _machine_remove(self, draft: RecipeDraft) -> str:
         template_id = normalize_template_id(draft.template_id)
@@ -206,3 +215,13 @@ class ZsGenerator:
         if draft.no_fluid_outputs:
             return "    .noFluidOutputs()"
         return f"    .fluidOutputs({self._fluid_array(draft.fluid_outputs)})"
+
+    def _item_input_call(self, draft: RecipeDraft) -> str:
+        if draft.no_item_inputs:
+            return "    .noItemInputs()"
+        return f"    .itemInputs({self._item_array(self._present_items(draft.item_inputs))})"
+
+    def _item_output_call(self, draft: RecipeDraft, outputs: list[ScriptItem]) -> str:
+        if draft.no_item_outputs:
+            return "    .noItemOutputs()"
+        return f"    .itemOutputs({self._item_array(outputs)})"

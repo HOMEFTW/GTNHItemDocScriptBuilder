@@ -7,6 +7,9 @@ from core.fluid_index import FluidEntry, FluidIndexStore
 from core.item_index import ItemEntry
 from core.ore_dictionary_index import OreDictionaryEntry, OreDictionaryIndexStore
 from core.recipe_model import ScriptFluid, ScriptItem
+from gui.debounce import DebouncedCallback
+from gui.syntax_highlight import ZsSyntaxHighlighter
+from gui.tooltip import ToolTip
 
 
 class ItemSearchFrame(ttk.Frame):
@@ -16,7 +19,8 @@ class ItemSearchFrame(ttk.Frame):
         self.on_pick = on_pick
         self.entries: List[ItemEntry] = []
         self.query_var = tk.StringVar()
-        self.query_var.trace_add("write", lambda *_: self.on_query(self.query_var.get()))
+        self._debounced_query = DebouncedCallback(self, 180, lambda: self.on_query(self.query_var.get()))
+        self.query_var.trace_add("write", lambda *_: self._debounced_query())
         self._create_widgets()
 
     def _create_widgets(self):
@@ -24,6 +28,16 @@ class ItemSearchFrame(ttk.Frame):
         top.pack(fill=tk.X, pady=(0, 5))
         ttk.Label(top, text="搜索物品:").pack(side=tk.LEFT)
         ttk.Entry(top, textvariable=self.query_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+        self.filter_var = tk.StringVar(value="全部")
+        self.filter_combo = ttk.Combobox(
+            top,
+            textvariable=self.filter_var,
+            values=("全部", "只搜物品", "只搜方块"),
+            state="readonly",
+            width=8,
+        )
+        self.filter_combo.pack(side=tk.LEFT, padx=(0, 5))
+        self.filter_combo.bind("<<ComboboxSelected>>", lambda _: self._debounced_query())
 
         table = ttk.Frame(self)
         table.pack(fill=tk.BOTH, expand=True)
@@ -55,7 +69,7 @@ class ItemSearchFrame(ttk.Frame):
         table.rowconfigure(0, weight=1)
         table.columnconfigure(0, weight=1)
         self.tree.bind("<Double-Button-1>", self._on_double_click)
-        self.tree.bind("<Button-3>", self._copy_focused_expression)
+        self.tree.bind("<Button-3>", self._show_context_menu)
 
     def set_entries(self, entries: List[ItemEntry]):
         self.entries = entries
@@ -80,11 +94,30 @@ class ItemSearchFrame(ttk.Frame):
         if item_id:
             self.on_pick(self.entries[int(item_id)])
 
-    def _copy_focused_expression(self, _event):
-        item_id = self.tree.focus()
-        if item_id:
-            self.clipboard_clear()
-            self.clipboard_append(self.entries[int(item_id)].ct_expression)
+    def _show_context_menu(self, event):
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+        self.tree.selection_set(item_id)
+        self.tree.focus(item_id)
+        entry = self.entries[int(item_id)]
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="填入选中格", command=lambda: self.on_pick(entry))
+        menu.add_separator()
+        menu.add_command(label="复制 CT 表达式", command=lambda: self._copy_to_clipboard(entry.ct_expression))
+        menu.add_command(label="复制 Registry ID", command=lambda: self._copy_to_clipboard(entry.registry_id))
+        if entry.chinese_name:
+            menu.add_command(label="复制中文名", command=lambda: self._copy_to_clipboard(entry.chinese_name))
+        menu.post(event.x_root, event.y_root)
+
+    def _copy_to_clipboard(self, text: str):
+        self.clipboard_clear()
+        self.clipboard_append(text)
+
+    @property
+    def filter_type(self) -> str:
+        mapping = {"全部": "all", "只搜物品": "item", "只搜方块": "block"}
+        return mapping.get(self.filter_var.get(), "all")
 
 
 class SlotButton(ttk.Button):
@@ -93,17 +126,47 @@ class SlotButton(ttk.Button):
         self.item: Optional[ScriptItem] = None
         self.output_chance = 10000
         self.default_label = label
+        self._tooltip = ToolTip(self, f"配方格 {label}")
+        self.bind("<Button-3>", self._show_context_menu)
 
     def set_item(self, item: Optional[ScriptItem]):
         self.item = item
         if item is None:
             self.configure(text=self.default_label)
+            self._tooltip.update_text(f"配方格 {self.default_label}")
         else:
             self.configure(text=item.to_zs())
+            tip = item.comment_name or item.expression
+            if item.amount != 1:
+                tip += f" * {item.amount}"
+            self._tooltip.update_text(tip)
+        self.update_visual_state(False)
 
     def clear(self):
         self.set_item(None)
         self.output_chance = 10000
+
+    def update_visual_state(self, is_selected: bool):
+        if is_selected:
+            self.configure(style="Selected.TButton")
+        elif self.item is not None and self.output_chance < 10000:
+            self.configure(style="ChanceReduced.TButton")
+        elif self.item is not None:
+            self.configure(style="Filled.TButton")
+        else:
+            self.configure(style="TButton")
+
+    def _show_context_menu(self, event):
+        menu = tk.Menu(self, tearoff=0)
+        if self.item is not None:
+            menu.add_command(label="复制表达式", command=lambda: self._copy_to_clipboard(self.item.to_zs()))
+            menu.add_separator()
+        menu.add_command(label="清空此格", command=self.clear)
+        menu.post(event.x_root, event.y_root)
+
+    def _copy_to_clipboard(self, text: str):
+        self.clipboard_clear()
+        self.clipboard_append(text)
 
 
 class SlotGridFrame(ttk.LabelFrame):
@@ -134,6 +197,8 @@ class PreviewFrame(ttk.LabelFrame):
             self._create_text_panel("保存内容 / 当前草稿")
         )
         self.full_file_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=(0, 3))
+        self.expand_button = ttk.Button(self.full_file_frame, text="全屏", command=self._open_editor, width=4)
+        self.expand_button.place(relx=1.0, y=0, anchor=tk.NE)
         self.generated_frame.grid(row=1, column=0, sticky=tk.NSEW, pady=(3, 0))
         self.rowconfigure(0, weight=1, uniform="preview")
         self.rowconfigure(1, weight=1, uniform="preview")
@@ -141,6 +206,49 @@ class PreviewFrame(ttk.LabelFrame):
         self.text = self.generated_text
         self.vertical_scrollbar = self.generated_vertical_scrollbar
         self.horizontal_scrollbar = self.generated_horizontal_scrollbar
+        self._full_highlighter = ZsSyntaxHighlighter(self.full_text, live=True)
+        self._generated_highlighter = ZsSyntaxHighlighter(self.generated_text)
+        self._icon_path = None
+
+    def set_icon_path(self, path):
+        self._icon_path = path
+
+    def _open_editor(self):
+        from gui.script_editor import ScriptEditorWindow
+        content = self.get_full_text()
+        self._lock_full_text()
+        self._editor_window = ScriptEditorWindow(
+            self.winfo_toplevel(), content,
+            on_save=self._on_editor_save,
+            on_change=self._on_editor_change,
+            on_close=self._on_editor_close,
+            icon_path=self._icon_path,
+        )
+
+    def _lock_full_text(self):
+        self._full_text_locked = True
+        self.full_text.bind("<Key>", self._block_input)
+
+    def _unlock_full_text(self):
+        self._full_text_locked = False
+        self.full_text.unbind("<Key>")
+
+    def _block_input(self, _event):
+        return "break"
+
+    def _on_editor_save(self, content: str):
+        self._unlock_full_text()
+        self.set_full_text(content)
+
+    def _on_editor_change(self, content: str, cursor_line: int = 1):
+        self.full_text.delete("1.0", tk.END)
+        self.full_text.insert(tk.END, content)
+        self._full_highlighter.highlight()
+        self.full_text.see(f"{cursor_line}.0")
+
+    def _on_editor_close(self):
+        self._unlock_full_text()
+        self._editor_window = None
 
     def _create_text_panel(self, title: str):
         frame = ttk.LabelFrame(self, text=title, padding=5)
@@ -166,12 +274,36 @@ class PreviewFrame(ttk.LabelFrame):
         horizontal_scrollbar.grid(row=1, column=0, sticky=tk.EW)
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
+        text.bind("<Button-3>", lambda e: self._show_text_context_menu(e, text))
         return frame, text, vertical_scrollbar, horizontal_scrollbar
+
+    def _show_text_context_menu(self, event, text_widget: tk.Text):
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="复制选中", command=lambda: self._copy_selection(text_widget))
+        menu.add_command(label="复制全部", command=lambda: self._copy_all(text_widget))
+        menu.add_separator()
+        menu.add_command(label="全选", command=lambda: text_widget.tag_add(tk.SEL, "1.0", tk.END))
+        menu.post(event.x_root, event.y_root)
+
+    def _copy_selection(self, text_widget: tk.Text):
+        try:
+            selected = text_widget.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.clipboard_clear()
+            self.clipboard_append(selected)
+        except tk.TclError:
+            pass
+
+    def _copy_all(self, text_widget: tk.Text):
+        content = text_widget.get("1.0", tk.END).rstrip()
+        if content:
+            self.clipboard_clear()
+            self.clipboard_append(content)
 
     def set_full_text(self, value: str):
         self.full_text.delete("1.0", tk.END)
         self.full_text.insert(tk.END, value)
         self.full_text.edit_reset()
+        self._full_highlighter.highlight()
 
     def get_full_text(self) -> str:
         return self.full_text.get("1.0", tk.END).rstrip()
@@ -185,6 +317,7 @@ class PreviewFrame(ttk.LabelFrame):
     def set_text(self, value: str):
         self.generated_text.delete("1.0", tk.END)
         self.generated_text.insert(tk.END, value)
+        self._generated_highlighter.highlight()
 
     def get_text(self) -> str:
         return self.generated_text.get("1.0", tk.END).rstrip()
@@ -197,7 +330,8 @@ class FluidSearchDialog(tk.Toplevel):
         self.on_pick = on_pick
         self.entries: List[FluidEntry] = []
         self.query_var = tk.StringVar()
-        self.query_var.trace_add("write", lambda *_: self._search())
+        self._debounced_search = DebouncedCallback(self, 180, self._search)
+        self.query_var.trace_add("write", lambda *_: self._debounced_search())
         self.title("选择流体")
         self.geometry("760x420")
         self.transient(parent)
@@ -269,7 +403,8 @@ class OreDictionarySearchDialog(tk.Toplevel):
         self.on_pick = on_pick
         self.entries: List[OreDictionaryEntry] = []
         self.query_var = tk.StringVar()
-        self.query_var.trace_add("write", lambda *_: self._search())
+        self._debounced_search = DebouncedCallback(self, 180, self._search)
+        self.query_var.trace_add("write", lambda *_: self._debounced_search())
         self.title("选择矿物字典")
         self.geometry("860x460")
         self.transient(parent)

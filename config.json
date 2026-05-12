@@ -1,8 +1,8 @@
 {
-  "item_index_path": "D:/Code/gtnh_item_doc_exporter/item_index.json",
+  "item_index_path": "F:/Minecraft/1.12.2mod服务器/.minecraft/versions/GT New Horizons 2.8.4/gtnh_item_doc_exporter/item_index.json",
   "gtnh_client_path": "",
-  "script_output_dir": "",
-  "window_geometry": "1200x820",
+  "script_output_dir": "D:\\Code",
+  "window_geometry": "1500x1040+486+190",
   "last_template": "generic_gt_machine",
   "last_recipe_map": "gt.recipe.assembler"
 }

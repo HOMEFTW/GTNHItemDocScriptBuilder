@@ -66,15 +66,20 @@ class ItemIndexStore:
         entries = [ItemEntry.from_json(item) for item in data.get("entries", [])]
         return cls(entries, str(data.get("language", "")), str(data.get("generatedAt", "")))
 
-    def search(self, query: str, limit: int = 500) -> List[ItemEntry]:
+    def search(self, query: str, limit: int = 500, filter_type: str = "all") -> List[ItemEntry]:
         normalized = query.strip().lower()
-        if not normalized:
+        if not normalized and filter_type == "all":
             return self.entries[:limit]
         results: List[ItemEntry] = []
-        terms = normalized.split()
+        terms = normalized.split() if normalized else []
         for entry, text in self._search_text:
-            if all(term in text for term in terms):
-                results.append(entry)
-                if len(results) >= limit:
-                    break
+            if filter_type == "item" and entry.is_block:
+                continue
+            if filter_type == "block" and not entry.is_block:
+                continue
+            if terms and not all(term in text for term in terms):
+                continue
+            results.append(entry)
+            if len(results) >= limit:
+                break
         return results

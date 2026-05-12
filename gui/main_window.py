@@ -33,6 +33,7 @@ from core.templates import (
 from core.zs_generator import ZsGenerator
 from core.zs_parser import ParsedRecipe, parse_zs_script_matches, parse_zs_script_with_source
 from gui.dialogs import AboutDialog, choose_import_script_file, choose_item_index, choose_script_file, show_error, show_info
+from gui.tooltip import ToolTip
 from gui.widgets import (
     FluidListFrame,
     FluidListRowsFrame,
@@ -71,6 +72,8 @@ class MainWindow:
         self.fluid_store: FluidIndexStore | None = None
         self.ore_dictionary_store: OreDictionaryIndexStore | None = None
         self.generator = ZsGenerator()
+        self.recent_items: list[ItemEntry] = []
+        self.RECENT_ITEMS_MAX = 20
         self.selected_slot: SlotButton | None = None
         self.active_input_grid: SlotGridFrame | None = None
         self.active_output_grid: SlotGridFrame | None = None
@@ -106,8 +109,14 @@ class MainWindow:
         self.current_script_path_var = tk.StringVar(value="当前文件: 未命名")
         self.no_fluid_inputs = tk.BooleanVar(value=False)
         self.no_fluid_outputs = tk.BooleanVar(value=False)
+        self.no_item_inputs = tk.BooleanVar(value=False)
+        self.no_item_outputs = tk.BooleanVar(value=False)
+        self.compact_format = tk.BooleanVar(value=False)
         self.no_fluid_inputs.trace_add("write", lambda *_: self._refresh_preview())
         self.no_fluid_outputs.trace_add("write", lambda *_: self._refresh_preview())
+        self.no_item_inputs.trace_add("write", lambda *_: self._refresh_preview())
+        self.no_item_outputs.trace_add("write", lambda *_: self._refresh_preview())
+        self.compact_format.trace_add("write", lambda *_: self._refresh_preview())
         self.include_furnace_xp.trace_add("write", lambda *_: self._refresh_preview())
         self.shaped_mirrored.trace_add("write", lambda *_: self._refresh_preview())
         self.fuel_ticks_var.trace_add("write", lambda *_: self._refresh_preview())
@@ -119,11 +128,72 @@ class MainWindow:
         self.selected_item_suffix.trace_add("write", lambda *_: self._apply_selected_item_options())
         self.output_chance_var.trace_add("write", lambda *_: self._apply_selected_output_chance())
         self._create_widgets()
+        self._bind_shortcuts()
+        self._attach_tooltips()
         self._try_load_default_index()
 
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.mainloop()
+
+    def _bind_shortcuts(self):
+        self.root.bind("<Control-s>", self._shortcut_save)
+        self.root.bind("<Control-S>", self._shortcut_save_as)
+        self.root.bind("<Control-z>", self._shortcut_undo)
+        self.root.bind("<Control-y>", self._shortcut_redo)
+        self.root.bind("<Control-g>", lambda _e: self._add_generated_to_script())
+        self.root.bind("<Control-d>", lambda _e: self._save_current_draft_to_list())
+        self.root.bind("<Control-Left>", lambda _e: self._parse_previous_recipe())
+        self.root.bind("<Control-Right>", lambda _e: self._parse_next_recipe())
+
+    def _shortcut_save(self, event):
+        if isinstance(event.widget, (tk.Text, ttk.Entry, tk.Entry)):
+            return
+        self._save_script()
+        return "break"
+
+    def _shortcut_save_as(self, event):
+        self._save_script_as()
+        return "break"
+
+    def _shortcut_undo(self, event):
+        if isinstance(event.widget, (tk.Text, ttk.Entry, tk.Entry)):
+            return
+        self._undo_full_script()
+        return "break"
+
+    def _shortcut_redo(self, event):
+        if isinstance(event.widget, (tk.Text, ttk.Entry, tk.Entry)):
+            return
+        self._redo_full_script()
+        return "break"
+
+    def _attach_tooltips(self):
+        ToolTip(self.choose_index_button, "选择物品索引文件")
+        ToolTip(self.new_script_button, "新建空白 .zs 脚本")
+        ToolTip(self.import_button, "导入已有 .zs 脚本")
+        ToolTip(self.parse_button, "按当前脚本类型解析到 GUI")
+        ToolTip(self.disable_parse_button, "关闭解析模式")
+        ToolTip(self.first_recipe_button, "跳到第一条配方")
+        ToolTip(self.previous_recipe_button, "上一条配方 (Ctrl+←)")
+        ToolTip(self.next_recipe_button, "下一条配方 (Ctrl+→)")
+        ToolTip(self.last_recipe_button, "跳到最后一条配方")
+        ToolTip(self.add_to_script_button, "添加当前草稿到脚本 (Ctrl+G)")
+        ToolTip(self.replace_recipe_button, "用当前草稿替换已解析的原配方")
+        ToolTip(self.save_button, "保存当前脚本 (Ctrl+S)")
+        ToolTip(self.save_as_button, "另存为新文件 (Ctrl+Shift+S)")
+        ToolTip(self.about_button, "关于本应用")
+        ToolTip(self.undo_button, "撤销完整脚本编辑 (Ctrl+Z)")
+        ToolTip(self.redo_button, "重做完整脚本编辑 (Ctrl+Y)")
+        ToolTip(self.refresh_preview_button, "刷新当前草稿预览")
+        ToolTip(self.copy_preview_button, "复制当前草稿到剪贴板")
+        ToolTip(self.clear_slots_button, "清空当前配方格")
+        ToolTip(self.ore_dictionary_button, "从矿物字典搜索并填入选中输入格")
+        ToolTip(self.save_draft_button, "保存当前草稿到列表 (Ctrl+D)")
+        ToolTip(self.load_draft_button, "载入选中的草稿")
+        ToolTip(self.delete_draft_button, "删除选中的草稿")
+        ToolTip(self.add_all_drafts_button, "将所有草稿追加到完整脚本")
+        ToolTip(self.preview.expand_button, "打开全屏脚本编辑器")
 
     def _configure_style(self):
         self.root.configure(background="#f3f4f6")
@@ -139,6 +209,12 @@ class MainWindow:
         style.configure("Treeview", background="#ffffff", foreground="#111111", fieldbackground="#ffffff")
         style.configure("Treeview.Heading", background="#e5e7eb", foreground="#111111")
         style.configure("Compact.TButton", padding=(6, 3))
+        style.configure("Selected.TButton", background="#bfdbfe", relief="sunken", padding=(6, 3))
+        style.configure("Filled.TButton", background="#d1fae5", padding=(6, 3))
+        style.configure("ChanceReduced.TButton", background="#fef3c7", padding=(6, 3))
+        style.map("Selected.TButton", background=[("active", "#93c5fd")])
+        style.map("Filled.TButton", background=[("active", "#a7f3d0")])
+        style.map("ChanceReduced.TButton", background=[("active", "#fde68a")])
 
     def _configure_icon(self) -> bool:
         if not self.app_icon_path.exists():
@@ -166,24 +242,31 @@ class MainWindow:
         )
         self.new_script_button = self._toolbar_button(self.toolbar_top, "新建 .zs", self._new_script)
         self.import_button = self._toolbar_button(self.toolbar_top, "导入 .zs", self._import_script)
+        self._toolbar_separator(self.toolbar_top)
         self.parse_button = self._toolbar_button(self.toolbar_top, "解析到GUI", self._parse_current_script_to_gui)
         self.disable_parse_button = self._toolbar_button(self.toolbar_top, "关闭解析", self._disable_parse_mode)
+        self._toolbar_separator(self.toolbar_top)
         self.first_recipe_button = self._toolbar_button(self.toolbar_top, "第一条", self._parse_first_recipe)
         self.previous_recipe_button = self._toolbar_button(self.toolbar_top, "上一条", self._parse_previous_recipe)
         self.next_recipe_button = self._toolbar_button(self.toolbar_top, "下一条", self._parse_next_recipe)
         self.last_recipe_button = self._toolbar_button(self.toolbar_top, "最后一条", self._parse_last_recipe)
+        self._toolbar_separator(self.toolbar_top)
         self.add_to_script_button = self._toolbar_button(self.toolbar_top, "添加到脚本", self._add_generated_to_script)
         self.replace_recipe_button = self._toolbar_button(self.toolbar_top, "替换原配方", self._replace_current_recipe)
+        self._toolbar_separator(self.toolbar_top)
         self.save_button = self._toolbar_button(self.toolbar_top, "保存", self._save_script)
         self.save_as_button = self._toolbar_button(self.toolbar_top, "另存为", self._save_script_as)
         self.about_button = self._toolbar_button(self.toolbar_top, "关于", self._show_about, side=tk.RIGHT)
         self.undo_button = self._toolbar_button(self.toolbar_bottom, "撤销", self._undo_full_script)
         self.redo_button = self._toolbar_button(self.toolbar_bottom, "重做", self._redo_full_script)
+        self._toolbar_separator(self.toolbar_bottom)
         self.refresh_preview_button = self._toolbar_button(self.toolbar_bottom, "刷新预览", self._refresh_preview)
         self.copy_preview_button = self._toolbar_button(self.toolbar_bottom, "复制预览", self._copy_preview)
+        self._toolbar_separator(self.toolbar_bottom)
         self.clear_slots_button = self._toolbar_button(self.toolbar_bottom, "清空格子", self._clear_slots)
         self.ore_dictionary_button = self._toolbar_button(self.toolbar_bottom, "填入 OreDict", self._choose_ore_dictionary)
         self._set_ore_dictionary_search_enabled(False)
+        self._toolbar_separator(self.toolbar_bottom)
         self.add_position_label_widget = ttk.Label(self.toolbar_bottom, text="添加位置:")
         self.add_position_label_widget.pack(side=tk.LEFT, padx=(8, 2))
         self.add_position_combo = ttk.Combobox(
@@ -216,6 +299,7 @@ class MainWindow:
         self._create_scrollable_editor(editor)
 
         self.preview = PreviewFrame(panes)
+        self.preview.set_icon_path(self.app_icon_path)
         self.preview.configure(width=PREVIEW_PANE_WIDTH)
         self.preview.pack_propagate(False)
         self.preview.grid_propagate(False)
@@ -232,6 +316,10 @@ class MainWindow:
         )
         button.pack(side=side, padx=2)
         return button
+
+    def _toolbar_separator(self, parent):
+        sep = ttk.Separator(parent, orient=tk.VERTICAL)
+        sep.pack(side=tk.LEFT, fill=tk.Y, padx=6, pady=2)
 
     def _text_display_width(self, text: str) -> int:
         return sum(1 if ord(char) < 128 else 2 for char in text)
@@ -271,6 +359,9 @@ class MainWindow:
         self.load_draft_button = self._toolbar_button(buttons, "载入草稿", self._load_selected_saved_draft)
         self.delete_draft_button = self._toolbar_button(buttons, "删除草稿", self._delete_selected_saved_draft)
         self.add_all_drafts_button = self._toolbar_button(buttons, "全部添加", self._add_all_saved_drafts_to_script)
+        self.params_locked = tk.BooleanVar(value=False)
+        self.params_locked_checkbox = ttk.Checkbutton(buttons, text="锁定参数", variable=self.params_locked)
+        self.params_locked_checkbox.pack(side=tk.LEFT, padx=(8, 2))
 
         columns = ("index", "kind", "summary")
         self.saved_draft_tree = ttk.Treeview(self.saved_drafts_frame, columns=columns, show="headings", height=3)
@@ -445,6 +536,24 @@ class MainWindow:
             variable=self.no_fluid_outputs,
         )
         self.no_fluid_outputs_checkbox.grid(row=8, column=1, sticky=tk.W, pady=2)
+        self.no_item_inputs_checkbox = ttk.Checkbutton(
+            params,
+            text="无物品输入",
+            variable=self.no_item_inputs,
+        )
+        self.no_item_inputs_checkbox.grid(row=12, column=0, sticky=tk.W, pady=2)
+        self.no_item_outputs_checkbox = ttk.Checkbutton(
+            params,
+            text="无物品输出",
+            variable=self.no_item_outputs,
+        )
+        self.no_item_outputs_checkbox.grid(row=12, column=1, sticky=tk.W, pady=2)
+        self.compact_format_checkbox = ttk.Checkbutton(
+            params,
+            text="单行格式",
+            variable=self.compact_format,
+        )
+        self.compact_format_checkbox.grid(row=13, column=0, sticky=tk.W, pady=2)
         self.remove_mode_label_widget = ttk.Label(params, text="删除布局:")
         self.remove_mode_label_widget.grid(row=9, column=0, sticky=tk.W, pady=2)
         self.remove_mode_combo = ttk.Combobox(
@@ -561,12 +670,29 @@ class MainWindow:
     def _search(self, query: str):
         if self.store is None:
             return
-        results = self.store.search(query, limit=500)
+        filter_type = self.search_frame.filter_type
+        if not query.strip() and self.recent_items:
+            recent = self.recent_items
+            if filter_type == "item":
+                recent = [e for e in recent if not e.is_block]
+            elif filter_type == "block":
+                recent = [e for e in recent if e.is_block]
+            seen = {e.ct_expression for e in recent}
+            rest = [e for e in self.store.search("", limit=500, filter_type=filter_type) if e.ct_expression not in seen]
+            results = recent + rest
+            results = results[:500]
+            self.search_frame.set_entries(results)
+            self.status_var.set(f"显示最近 {len(recent)} 条 + 全部物品")
+            return
+        results = self.store.search(query, limit=500, filter_type=filter_type)
         self.search_frame.set_entries(results)
         self.status_var.set(f"显示 {len(results)} / {self.store.entry_count} 条")
 
     def _select_slot(self, slot: SlotButton):
+        if self.selected_slot is not None:
+            self.selected_slot.update_visual_state(is_selected=False)
         self.selected_slot = slot
+        slot.update_visual_state(is_selected=True)
         self._sync_selected_item_options()
         self._update_output_chance_visibility()
         self.status_var.set(f"已选择配方格 {slot.default_label}，双击左侧物品填入")
@@ -670,6 +796,14 @@ class MainWindow:
             [self.no_fluid_inputs_checkbox, self.no_fluid_outputs_checkbox],
             shows_machine_recipe_parameters,
         )
+        self._set_grid_visible(
+            [self.no_item_inputs_checkbox, self.no_item_outputs_checkbox],
+            shows_machine_recipe_parameters,
+        )
+        self._set_grid_visible(
+            [self.compact_format_checkbox],
+            shows_machine_recipe_parameters,
+        )
 
     def _update_fluid_visibility(self):
         kind = self.recipe_kind.get()
@@ -714,10 +848,17 @@ class MainWindow:
         if self.selected_slot is None:
             self.status_var.set("请先点击一个配方格")
             return
+        self._add_to_recent(entry)
         self.selected_slot.set_item(ScriptItem(entry.ct_expression, 1, entry.chinese_name))
         self._sync_selected_item_options()
         self.status_var.set(f"已填入 {entry.chinese_name or entry.registry_id}")
         self._refresh_preview()
+
+    def _add_to_recent(self, entry: ItemEntry):
+        self.recent_items = [e for e in self.recent_items if e.ct_expression != entry.ct_expression]
+        self.recent_items.insert(0, entry)
+        if len(self.recent_items) > self.RECENT_ITEMS_MAX:
+            self.recent_items = self.recent_items[: self.RECENT_ITEMS_MAX]
 
     def _choose_ore_dictionary(self):
         if self.ore_dictionary_store is None:
@@ -857,6 +998,9 @@ class MainWindow:
             recipe_map=recipe_map_id_from_label(self.recipe_map.get()),
             no_fluid_inputs=bool(self.no_fluid_inputs.get()),
             no_fluid_outputs=bool(self.no_fluid_outputs.get()),
+            no_item_inputs=bool(self.no_item_inputs.get()),
+            no_item_outputs=bool(self.no_item_outputs.get()),
+            compact_format=bool(self.compact_format.get()),
         )
 
     def _output_chances(self, output_grid: SlotGridFrame) -> list[int]:
@@ -1306,6 +1450,9 @@ class MainWindow:
         self.special_item_var.set("" if draft.special_item is None else draft.special_item.to_zs())
         self.no_fluid_inputs.set(bool(draft.no_fluid_inputs))
         self.no_fluid_outputs.set(bool(draft.no_fluid_outputs))
+        self.no_item_inputs.set(bool(draft.no_item_inputs))
+        self.no_item_outputs.set(bool(draft.no_item_outputs))
+        self.compact_format.set(bool(draft.compact_format))
         self._show_slot_editor(draft.kind)
         self._set_grid_items(self.active_input_grid, draft.item_inputs)
         self._set_grid_items(self.active_output_grid, draft.item_outputs)
@@ -1333,10 +1480,13 @@ class MainWindow:
             self.active_input_grid.clear()
         if self.active_output_grid:
             self.active_output_grid.clear()
+        if not self.params_locked.get():
+            self.fluid_inputs.set_fluids([])
+            self.fluid_outputs.set_fluids([])
         self.selected_slot = None
         self._sync_selected_item_options()
         self._refresh_preview()
-        self.status_var.set("已清空配方格")
+        self.status_var.set("已清空配方格" if not self.params_locked.get() else "已清空配方格（参数已锁定）")
 
     def _clear_all_slots(self):
         for input_grid, output_grid in self.slot_editors.values():

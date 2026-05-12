@@ -53,3 +53,6 @@ class RecipeDraft:
     recipe_map: str = ""
     no_fluid_inputs: bool = False
     no_fluid_outputs: bool = False
+    no_item_inputs: bool = False
+    no_item_outputs: bool = False
+    compact_format: bool = False

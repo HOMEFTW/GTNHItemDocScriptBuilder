@@ -111,8 +111,8 @@ def _line_end_offset(text: str, start: int) -> int:
 
 
 def _parse_gt_machine(text: str) -> RecipeDraft:
-    item_inputs = _parse_item_array(_chain_arg(text, ".itemInputs"))
-    item_outputs = _parse_item_array(_chain_arg(text, ".itemOutputs"))
+    item_inputs = [] if ".noItemInputs()" in text else _parse_item_array(_chain_arg(text, ".itemInputs"))
+    item_outputs = [] if ".noItemOutputs()" in text else _parse_item_array(_chain_arg(text, ".itemOutputs"))
     output_chances_arg = _optional_chain_arg(text, ".outputChances")
     fluid_inputs = [] if ".noFluidInputs()" in text else _parse_fluid_array(_optional_chain_arg(text, ".fluidInputs") or "[]")
     fluid_outputs = [] if ".noFluidOutputs()" in text else _parse_fluid_array(_optional_chain_arg(text, ".fluidOutputs") or "[]")
@@ -131,6 +131,8 @@ def _parse_gt_machine(text: str) -> RecipeDraft:
         special_item=_parse_item(_optional_chain_arg(text, ".specialItem") or ""),
         no_fluid_inputs=".noFluidInputs()" in text,
         no_fluid_outputs=".noFluidOutputs()" in text,
+        no_item_inputs=".noItemInputs()" in text,
+        no_item_outputs=".noItemOutputs()" in text,
     )
 
 
