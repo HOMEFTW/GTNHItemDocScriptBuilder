@@ -1,130 +1,137 @@
 # GTNHItemDocScriptBuilder
 
-`GTNHItemDocScriptBuilder` 是一个 Tkinter 桌面 GUI 工具，用 [`GTNHItemDocExporter`](https://github.com/HOMEFTW/GTNHItemDocExporter) 导出的索引文件生成和维护 CraftTweaker / ModTweaker / GregTech `.zs` 脚本。
+面向 **GT New Horizons** 的桌面脚本工作区。读取 [GTNHItemDocExporter](https://github.com/HOMEFTW/GTNHItemDocExporter) 导出的索引，通过物品搜索、可视化配方设计和代码编辑，生成与维护 CraftTweaker / ModTweaker / GregTech `.zs` 脚本。
 
-- GitHub：<https://github.com/HOMEFTW/GTNHItemDocScriptBuilder>
-- 当前版本：`1.2.0`
-- 工作室：`Andgatech`
-- 配套导出模组：[`GTNHItemDocExporter`](https://github.com/HOMEFTW/GTNHItemDocExporter)
+**应用版本：1.2.0 · 目标整合包：GTNH 2.9.0-beta-3 · 工作室：Andgatech**
 
-应用信息可通过窗口右上角”关于”按钮查看：`GTNHItemDocScriptBuilder`，版本 `1.2.0`，工作室 `Andgatech`。
+[下载 Windows EXE](https://github.com/HOMEFTW/GTNHItemDocScriptBuilder/releases) · [下载配套导出器](https://github.com/HOMEFTW/GTNHItemDocExporter/releases) · [反馈问题](https://github.com/HOMEFTW/GTNHItemDocScriptBuilder/issues)
 
-## 项目关系
+## 快速开始
 
-[`GTNHItemDocExporter`](https://github.com/HOMEFTW/GTNHItemDocExporter) 是运行在 GTNH 客户端里的 Forge 模组，负责从真实游戏环境导出 `item_index.json`、`fluid_index.json` 和 `ore_dictionary_index.json`。
+1. 下载 [Releases](https://github.com/HOMEFTW/GTNHItemDocScriptBuilder/releases) 中面向 GTNH **2.9.0-beta-3** 的 `GTNHItemDocScriptBuilder.exe`。打包版无需另外安装 Python。
+2. 在 GTNH 客户端使用 Exporter 生成索引。进入世界自动导出，或执行 `/itemdoc export`。
+3. 运行编辑器，在左侧“物品索引”中点击“选择 item_index.json”。同目录的流体和矿物字典 JSON 会自动尝试加载。
+4. 点击“新建 .zs”，或通过“打开 .zs / 打开文件夹”开始编辑已有脚本。
+5. 在“配方设计”页选定类型，点击输入或输出格，再双击左侧物品填入；按需填写数量、流体和机器参数。
+6. 检查生成预览，点击“添加到脚本”，然后按 **Ctrl+S** 保存。将需要使用的脚本放入对应游戏实例的 `scripts` 文件夹。
 
-本应用读取这些导出文件，提供搜索、配方草稿、脚本预览、导入解析和保存能力，用鼠标操作辅助编写 `.zs` 脚本。
+升级整合包后请重新导出索引，避免使用旧物品、流体或矿词数据。编辑器不会启动游戏或执行 ZenScript；实际配方效果需要在目标客户端验证。
 
-推荐流程：
+## IDE 工作区
 
-1. 使用 `GTNHItemDocExporter` 在 GTNH 客户端生成索引文件。
-2. 在本应用中选择导出目录里的 `item_index.json`。
-3. GUI 会自动尝试加载同目录的 `fluid_index.json` 和 `ore_dictionary_index.json`。
-4. 在 GUI 中编写、导入、替换或保存 `.zs` 脚本。
+| 区域 | 用途 |
+| --- | --- |
+| 脚本目录 | 打开文件夹、递归浏览 `.zs`，双击或 Enter 打开文件 |
+| 物品索引 | 搜索名称、注册 ID 与表达式，按物品/方块过滤 |
+| 脚本编辑页 | 编辑完整文件，支持行号、语法高亮、就地查找和撤销/重做 |
+| 配方设计页 | 编辑配方格、数量、NBT 后缀、机器参数及流体，查看只读生成预览 |
+| 配方导航 | 查看受支持配方的类型、行号和摘要，选择配方继续编辑 |
+| 草稿暂存 | 保存、载入、删除草稿，或按顺序全部添加到脚本 |
+| 状态栏 | 查看操作结果、当前行列和文件编码提示 |
 
-## 运行
+主要面板可拖动调整，菜单“视图 → 恢复面板布局”恢复侧栏与底部比例。默认窗口 `1440×900`，最小 `1000×700`，启动时根据屏幕大小调整。
 
-```powershell
-python main.py
-```
+当前是**单文档工作区**：脚本页和配方设计页对应同一个当前文件，不是多个文件的编辑页签。
 
-## 导入继续编辑
+## 文件与配方编辑流程
 
-未导入 `.zs` 时可以直接从空白模式开始写：点击“新建 .zs”会先选择并创建一个空脚本文件，右侧上半区绑定为当前文件；之后点击“添加到脚本”把当前草稿加入完整脚本，再点击“保存”会直接覆盖当前文件。未新建也未导入时点击“保存”，会自动走“另存为”。“另存为”会把右侧上半区完整脚本保存到新路径，并把该路径设为当前文件。工具栏会显示当前文件路径。
+### 新建、打开和保存
 
-工具栏的“导入 .zs”只会读取已保存的完整脚本，并放到右侧上半区，不会自动解析或改动当前 GUI 草稿。默认状态适合直接写完整 `.zs` 文件。
+“新建 .zs”先创建未命名缓冲区，首次保存时再选择文件路径。之后 Ctrl+S 直接保存当前文件；“另存为”会绑定新的路径。
 
-需要从脚本回填 GUI 时，先选择左侧“脚本类型”，再点击“解析到GUI”。解析器只会按当前脚本类型查找配方，例如选“有序合成”只解析 `recipes.addShaped...`，选“GTNH/模组机器”只解析 RA2 builder，避免有序合成误解析到 GT 机器里。解析成功后会进入解析模式，此时切换脚本类型或删除子类型会自动按新类型重新解析完整脚本；点击“关闭解析”后回到手动草稿模式，手写模式下切换脚本类型会自动清空配方格和流体行。上方“配方列表”会列出当前脚本类型下所有可解析配方，显示当前类型序号、行号、类型和更完整的摘要，例如 `输出 <- 输入` 或 `recipe map: 输入 -> 输出`；点击某一行会直接解析到 GUI。“第一条 / 上一条 / 下一条 / 最后一条”也可以在当前脚本类型的可解析配方之间切换。
+文件有未保存内容时，标题与页签显示圆点。新建、打开其他文件或退出前，会提示保存、放弃或取消；保存失败或取消路径选择会保留当前内容。保存完整文件不受当前配方草稿是否有效影响。
 
-右侧 ZS 预览分为上下两半：上半区是完整 `.zs` 文件编辑区，下半区是当前草稿生成内容。当前草稿会自动在脚本前写一行中文注释，例如 `// 木板 <minecraft:planks> * 2 和 煤炭 <minecraft:coal> * 3 有序合成 火把 <minecraft:torch> * 1`，GT 机器会生成类似 `// 活塞 <minecraft:piston> * 3 和 水 <liquid:water> * 1000 通过 gt.recipe.assembler 合成 黏性活塞 <minecraft:sticky_piston> * 1` 的注释。“添加位置”可选择“文件末尾”“当前光标”或“当前配方后”，点击“添加到脚本”会把下半区内容插入到对应位置；解析过配方后，点击“替换原配方”会用当前草稿替换完整脚本里的原始配方片段；“保存”保存的是上半区完整文件，已有当前文件时不再弹出另存为窗口。两个区域都有竖向和横向滚动条，上半区支持“撤销”和“重做”。
+### 从脚本继续编辑配方
 
-点击“添加到脚本”或“替换原配方”前会先校验当前草稿；如果缺少输出、缺少输入、`Duration` / `EU/t` / `Special Value` 等数字字段非法，工具只会在下半区显示错误和状态提示，不会把 `// 无法生成脚本...` 写进完整脚本。保存完整 `.zs` 文件不会被当前草稿校验拦截，方便继续手写或修整完整脚本。
+打开脚本会更新配方导航，但不会自动覆盖当前 GUI 草稿。在脚本页点击“解析到GUI”，会识别光标附近的配方类型并切换到配方设计。也可以选择导航中的配方。
 
-上方“草稿列表”可以临时保存多条当前草稿。点击“保存草稿”会把当前可生成的草稿加入列表，双击或选中后点击“载入草稿”会回填到 GUI；“删除草稿”会移除选中项；“全部添加”会按列表顺序把所有草稿追加到右侧上半区完整脚本。
+设计页的“按类型解析”支持按当前类型过滤，并在同类配方之间跳转。“关闭解析”使草稿恢复独立编辑；手动切换脚本类型会清空配方格。
 
-## 输入
+### 生成、插入与替换
 
-选择导出的物品索引，例如：
+生成预览只表示当前草稿，**不会自动写入脚本或磁盘**。
 
-```text
-D:\Code\gtnh_item_doc_exporter\item_index.json
-```
+- “添加到脚本”：插入到文件末尾、当前光标或已解析配方之后。
+- “替换原配方”：替换当前解析的原始代码片段。
+- 添加和替换前校验草稿；缺少输入、输出或参数非法时不会写入错误注释。
+- 解析后如手写修改了完整脚本，应重新解析后再按配方位置插入或替换，避免使用过期位置。
+- 最后点击“保存”或按 Ctrl+S，才会写入文件。
 
-如果同目录存在 `fluid_index.json`，GUI 会自动加载流体索引。GTNH/模组机器生成方式中的“流体输入”和“流体输出”都有独立的“条数”输入框，默认 1 条；填入几条就会生成几条对应的流体 UI 行。每行可以点击“搜索”，按中文名、`fluidName` 或 `<liquid:...>` 表达式查找流体，双击后填入当前流体行。
+草稿暂存支持锁定参数，适合连续编写同类配方；**暂存只在当前会话有效，关闭程序后清空**。
 
-如果同目录存在 `ore_dictionary_index.json`，GUI 会自动加载矿物字典索引。先点击一个配方输入格，再点击工具栏的“填入 OreDict”，可以按 `oreName`、`<ore:...>` 表达式或包含的物品表达式搜索，双击后会把 `<ore:...>` 写入当前输入格。OreDict 只作为输入使用，不会填入输出格。
+## 支持的配方与参数
 
-## 支持脚本
+| 类别 | 支持内容 |
+| --- | --- |
+| 工作台 | 有序、镜像有序、无序合成 |
+| 熔炉 | 熔炼配方、可选 XP、燃料燃烧时间 |
+| 删除配方 | 工作台、熔炉、GT `RecipeRemover` |
+| GT 机器 | RA2 builder、Recipe Map、物品/流体输入输出、Duration、EU/t |
+| RA2 可选项 | 输出概率、Special Value、Special Item、无物品/无流体输入输出、单行格式 |
+| 其他生成方式 | Thermal Expansion Furnace / Pulverizer、AE Grinder / Inscriber |
 
-- 有序合成
-- 镜像有序合成 `recipes.addShapedMirrored`
-- 无序合成
-- 熔炉配方
-- 熔炉燃料 `furnace.setFuel`
-- 删除配方
-- GTNH / 模组机器配方
-- 矿物字典输入 `<ore:...>`
-- 物品数量 `*0` 和 `.withTag(...)` 后缀
-- RA2 `.outputChances(...)` 输出概率
-- RA2 `.specialValue(...)`
-- RA2 `.specialItem(...)`
-- RA2 `.noFluidInputs()` / `.noFluidOutputs()` 开关
-- RA2 `.noItemInputs()` / `.noItemOutputs()` 开关
-- 导入 `.zs`、按当前脚本类型解析到 GUI、配方列表点击解析、脚本草稿列表、智能摘要、自动中文注释、解析模式下切换类型自动重解析、在当前类型配方间上一条/下一条导航、按位置添加草稿到完整脚本、替换原配方
-- 单行紧凑格式输出（勾选"单行格式"）
-- 全屏脚本编辑器（行号、查找替换、语法高亮、实时同步预览区）
-- 搜索防抖、物品/方块过滤、最近使用记录
-- 键盘快捷键（Ctrl+S/Z/Y/G/D、Ctrl+←/→）
-- 配方格视觉状态（选中蓝色、已填绿色、概率黄色）
-- 工具栏分组分隔符、按钮悬浮提示
-- 右键上下文菜单（搜索结果、配方格、预览区）
-- ZS 语法高亮（注释、字符串、数字、关键字、方法、尖括号表达式）
-- 草稿列表"锁定参数"批量编写模式
+配方格支持数量 `0`，用于编程电路、模具等输入；物品后缀支持 `.withTag(...)` 等原始表达式。GT 输出概率使用 `10000 = 100%`。OreDict 只用于输入，可通过“填入 OreDict”搜索选择；流体列表可调整条数并逐行搜索。
 
-不同脚本类型使用独立配方格界面：有序合成和无序合成为 `3 x 3` 输入加 1 个输出，熔炉为 1 个输入加 1 个输出，燃料为 1 个输入且无输出，GTNH/模组机器为 16 个物品输入加 9 个物品输出。机器生成方式支持流体输入/输出、`duration` 和 `EU/t`。其中 Thermal Expansion 与 AE 生成方式参考 ModTweaker 的 logger 输出；GT 机器使用统一的 `GT RA2` 生成方式，具体机器由 `Recipe Map` 决定，语法参考 Minetweaker-Gregtech-5-Addon Wiki 的 RA2 builder：
-
-点击任意物品格后，中间的“选中物品格”区域可以编辑数量和后缀。数量允许 `0`，用于 GT 编程电路或模具这类 `<...> * 0` 输入；后缀会直接拼接到物品表达式之后，可填写 `.withTag(...)` 这类 NBT 表达式。GTNH/模组机器模式下选中输出格时，还可以填写“输出概率”，单位为 GT 常用的 `10000 = 100%`，会生成 RA2 的 `.outputChances([...])`。
-
-删除模式下会显示“删除类型”子选项，可选择有序、无序、熔炉或 GT，并切换到对应的独立配方格界面。GT 删除使用 16 个物品输入格作为 `RecipeRemover.remove(...)` 的物品输入数组，并提供独立的“GT 删除流体输入”多行列表，每行都可搜索流体、填写数量或清空。
-
-参数区提供 MineTweaker 常用选项：“镜像有序合成”会让有序合成生成 `recipes.addShapedMirrored(...)`；“写入熔炉 XP”关闭后，熔炉配方会生成两参数写法 `furnace.addRecipe(output, input);`；“燃烧时间”用于燃料模式生成 `furnace.setFuel(item, ticks);`。
-
-参数和流体区会按脚本类型显示：有序/无序合成不显示流体，熔炉只显示 XP，燃料只显示燃烧时间，GTNH/模组机器显示“生成方式”、`Recipe Map`、`Duration`、`EU/t`、无流体开关和可调条数的流体输入/输出。删除模式只有选择 `GT` 时才显示 `Recipe Map` 和专用的 GT 删除流体输入列表。
-
-GTNH/模组机器参数区的 `Special Value` 默认留空，不生成脚本；填入整数后会生成 `.specialValue(value)`。
-
-GTNH/模组机器参数区的 `Special Item` 默认留空，不生成脚本；先选中一个已有物品的配方格，再点击“从当前选中物品填入”，会复制该物品的表达式、数量和后缀，并生成 `.specialItem(item)`。
-
-GUI 的第一 UI 优先级是保持当前三栏比例：左侧物品搜索栏固定宽度，右侧 ZS 预览固定宽度，中间编辑区使用剩余空间。默认窗口为 `1500 x 1080`，旧保存配置的高度低于 `1040` 时会自动提升；后续新增控件时必须先保证这个比例不被破坏；上方“配方列表”和“草稿列表”行数保持固定，增加出来的高度优先给下面左侧搜索、中间编辑和右侧预览三栏；左侧、中间和右侧长内容依靠各自滚动条查看，不允许撑宽侧栏挤压中间编辑区。顶部工具栏使用两排按钮，“选择 item_index.json”保留完整文字；按钮按中文显示宽度预留空间，避免文字被挤压。
-
-GTNH/模组机器模式下，“生成方式”只决定脚本生成语法，当前保留 `GT RA2`、`Thermal Expansion Furnace`、`Thermal Expansion Pulverizer`、`AE Grinder` 和 `AE Inscriber`。`Recipe Map` 下拉框决定 GT 配方真正加入哪张配方表；列表来自 Wiki 的 `Available recipe maps`，界面会显示中文名和原 ID，例如 `组装机 (gt.recipe.assembler)`；选择后会覆盖 `GT RA2` 的默认 recipe map，生成脚本时仍使用括号中的原 ID。旧配置里的 `assembler_like`、`cutter_like` 等旧模板 ID 会自动迁移到 `GT RA2`，并保留原先对应的默认 `Recipe Map`。参数区的“无流体输入”和“无流体输出”会生成 RA2 的 `.noFluidInputs()` / `.noFluidOutputs()`，并跳过对应的 `.fluidInputs(...)` / `.fluidOutputs(...)`。
+“生成方式”选择语法，“Recipe Map”选择 GT 配方表。中文显示名不会改变生成代码中的原始 map ID。例如：
 
 ```zenscript
 mods.gregtech.RA2
     .builder()
-    .itemInputs([<minecraft:dirt>])
-    .itemOutputs([<minecraft:obsidian>])
-    .duration(420)
-    .eut(100)
+    .itemInputs([<minecraft:piston>, <minecraft:slime_ball>])
+    .itemOutputs([<minecraft:sticky_piston>])
+    .duration(200)
+    .eut(30)
     .addTo("gt.recipe.assembler");
 ```
 
-删除 GT 机器配方时可在“删除模式”选择 `GT`，会生成：
+该片段用于展示语法，实际输入、输出与机器参数由使用者确定。
 
-```zenscript
-mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>, <minecraft:slime_ball>], []);
-```
+## 快捷键
 
-如果填写多条 GT 删除流体输入，会生成同一个流体数组参数：
+| 操作 | 快捷键 |
+| --- | --- |
+| 新建 / 打开脚本 | Ctrl+N / Ctrl+O |
+| 保存 / 另存为 | Ctrl+S / Ctrl+Shift+S |
+| 查找 | Ctrl+F |
+| 撤销 / 重做 | Ctrl+Z / Ctrl+Y |
+| 添加当前配方 | Ctrl+G |
+| 暂存当前草稿 | Ctrl+Shift+D |
+| 上一条 / 下一条配方 | Alt+← / Alt+→ |
 
-```zenscript
-mods.gregtech.RecipeRemover.remove("gt.recipe.assembler", [<minecraft:piston>], [<liquid:water> * 1000, <liquid:chlorine> * 144]);
-```
+“全屏”打开独立编辑窗口，提供查找/替换；其中 Ctrl+H 打开替换。关闭时同步最后一次输入，“保存并关闭”实际写入文件，取消保存则继续停留在窗口。
 
-## 打包
+## 从源码运行与打包
+
+需要 **Python 3.10+** 和 Tkinter；本次在 Windows / Python 3.14 环境验证。
 
 ```powershell
-.\build.bat
+git clone https://github.com/HOMEFTW/GTNHItemDocScriptBuilder.git
+cd GTNHItemDocScriptBuilder
+python main.py
 ```
 
-应用窗口和打包后的 exe 使用项目目录下的 `icon.ico` 作为图标。
+运行时使用 Python 标准库。构建 Windows EXE 时安装打包依赖：
+
+```powershell
+python -m pip install -r requirements.txt
+python -m PyInstaller --noconfirm build.spec
+```
+
+也可运行 `build.bat`。产物为 `dist/GTNHItemDocScriptBuilder.exe`。
+
+执行测试：
+
+```powershell
+python -m unittest discover -s tests
+```
+
+部分测试会创建 Tk 窗口，需要可用的桌面环境。
+
+## 验证范围与限制
+
+- 本次覆盖原有 111 项测试和新增 16 项 IDE 回归，并完成 Windows 窗口检查与 EXE 打包。
+- 已核验 GTNH beta3 对应的 Minetweaker-Gregtech-5-Addon `2.3.4` 中 RA2 与 RecipeRemover 接口。
+- `.zs` 回填是静态解析，只支持已实现的配方语法；不执行脚本，不能保证任意手写函数、变量或宏均可回填。
+- 尚未在 beta3 游戏中执行生成脚本；其他模组模板未逐一完成目标 jar 核验。
+
+数据导出方式见 [GTNHItemDocExporter](https://github.com/HOMEFTW/GTNHItemDocExporter)。

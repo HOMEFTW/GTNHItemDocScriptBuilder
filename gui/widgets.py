@@ -188,20 +188,21 @@ class SlotGridFrame(ttk.LabelFrame):
 
 
 class PreviewFrame(ttk.LabelFrame):
-    def __init__(self, parent):
-        super().__init__(parent, text="ZS 预览", padding=5)
+    def __init__(self, parent, generated_parent=None):
+        super().__init__(parent, text="ZenScript", padding=5)
         self.full_file_frame, self.full_text, self.full_vertical_scrollbar, self.full_horizontal_scrollbar = (
             self._create_text_panel("完整 .zs 文件（未导入）")
         )
         self.generated_frame, self.generated_text, self.generated_vertical_scrollbar, self.generated_horizontal_scrollbar = (
-            self._create_text_panel("保存内容 / 当前草稿")
+            self._create_text_panel("生成预览 · 尚未写入脚本", parent=generated_parent)
         )
         self.full_file_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=(0, 3))
         self.expand_button = ttk.Button(self.full_file_frame, text="全屏", command=self._open_editor, width=4)
         self.expand_button.place(relx=1.0, y=0, anchor=tk.NE)
-        self.generated_frame.grid(row=1, column=0, sticky=tk.NSEW, pady=(3, 0))
-        self.rowconfigure(0, weight=1, uniform="preview")
-        self.rowconfigure(1, weight=1, uniform="preview")
+        if generated_parent is None:
+            self.generated_frame.grid(row=1, column=0, sticky=tk.NSEW, pady=(3, 0))
+            self.rowconfigure(1, weight=1)
+        self.rowconfigure(0, weight=3)
         self.columnconfigure(0, weight=1)
         self.text = self.generated_text
         self.vertical_scrollbar = self.generated_vertical_scrollbar
@@ -209,6 +210,76 @@ class PreviewFrame(ttk.LabelFrame):
         self._full_highlighter = ZsSyntaxHighlighter(self.full_text, live=True)
         self._generated_highlighter = ZsSyntaxHighlighter(self.generated_text)
         self._icon_path = None
+        self.save_document = None
+        self._create_find_bar()
+        self.line_numbers = tk.Canvas(self.full_file_frame, width=46, background="#eef2f6", highlightthickness=0)
+        self.full_text.grid_configure(column=1)
+        self.full_vertical_scrollbar.grid_configure(column=2)
+        self.full_horizontal_scrollbar.grid_configure(column=1)
+        self.full_file_frame.columnconfigure(0, weight=0)
+        self.full_file_frame.columnconfigure(1, weight=1)
+        self.line_numbers.grid(row=0, column=0, sticky=tk.NS)
+        self.full_text.configure(yscrollcommand=self._on_editor_scroll)
+        self.full_text.bind("<<Modified>>", lambda _e: self._draw_line_numbers(), add="+")
+        self.full_text.bind("<Configure>", lambda _e: self._draw_line_numbers(), add="+")
+
+    def _on_editor_scroll(self, first, last):
+        self.full_vertical_scrollbar.set(first, last)
+        self._draw_line_numbers()
+
+    def _draw_line_numbers(self):
+        if not self.winfo_exists():
+            return
+        self.line_numbers.delete("all")
+        index = self.full_text.index("@0,0")
+        while True:
+            info = self.full_text.dlineinfo(index)
+            if info is None:
+                break
+            self.line_numbers.create_text(36, info[1], anchor="ne", text=index.split(".")[0],
+                                          fill="#718096", font=("Consolas", 10))
+            index = self.full_text.index(f"{index}+1line")
+
+    def _create_find_bar(self):
+        self.find_bar = ttk.Frame(self, padding=4)
+        self.find_var = tk.StringVar()
+        ttk.Label(self.find_bar, text="查找").pack(side=tk.LEFT)
+        self.find_entry = ttk.Entry(self.find_bar, textvariable=self.find_var, width=30)
+        self.find_entry.pack(side=tk.LEFT, padx=6)
+        self.find_entry.bind("<Return>", lambda _e: self.find_next())
+        self.find_entry.bind("<Escape>", lambda _e: self.hide_find())
+        ttk.Button(self.find_bar, text="下一个", command=self.find_next).pack(side=tk.LEFT)
+        ttk.Button(self.find_bar, text="关闭", command=self.hide_find).pack(side=tk.RIGHT)
+        self.find_result = ttk.Label(self.find_bar, text="")
+        self.find_result.pack(side=tk.LEFT, padx=8)
+
+    def show_find(self):
+        self.find_bar.grid(row=2, column=0, sticky=tk.EW)
+        self.find_entry.focus_set()
+        return "break"
+
+    def hide_find(self):
+        self.find_bar.grid_remove()
+        self.full_text.tag_remove("find_match", "1.0", tk.END)
+        self.full_text.focus_set()
+        return "break"
+
+    def find_next(self):
+        query = self.find_var.get()
+        self.full_text.tag_remove("find_match", "1.0", tk.END)
+        if not query:
+            self.find_result.configure(text="请输入查找内容")
+            return
+        pos = self.full_text.search(query, tk.INSERT, stopindex=tk.END, nocase=True)
+        if not pos:
+            pos = self.full_text.search(query, "1.0", stopindex=tk.END, nocase=True)
+        self.find_result.configure(text="" if pos else "未找到")
+        if pos:
+            end = f"{pos}+{len(query)}c"
+            self.full_text.tag_configure("find_match", background="#fde68a")
+            self.full_text.tag_add("find_match", pos, end)
+            self.full_text.mark_set(tk.INSERT, end)
+            self.full_text.see(pos)
 
     def set_icon_path(self, path):
         self._icon_path = path
@@ -237,8 +308,10 @@ class PreviewFrame(ttk.LabelFrame):
         return "break"
 
     def _on_editor_save(self, content: str):
-        self._unlock_full_text()
-        self.set_full_text(content)
+        self._on_editor_change(content)
+        if self.save_document is not None:
+            return self.save_document()
+        return True
 
     def _on_editor_change(self, content: str, cursor_line: int = 1):
         self.full_text.delete("1.0", tk.END)
@@ -250,8 +323,8 @@ class PreviewFrame(ttk.LabelFrame):
         self._unlock_full_text()
         self._editor_window = None
 
-    def _create_text_panel(self, title: str):
-        frame = ttk.LabelFrame(self, text=title, padding=5)
+    def _create_text_panel(self, title: str, parent=None):
+        frame = ttk.LabelFrame(parent if parent is not None else self, text=title, padding=5)
         text = tk.Text(
             frame,
             wrap=tk.NONE,
@@ -262,6 +335,10 @@ class PreviewFrame(ttk.LabelFrame):
             insertbackground="#111111",
             undo=True,
             maxundo=-1,
+            borderwidth=0,
+            highlightthickness=0,
+            padx=10,
+            pady=8,
         )
         vertical_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text.yview)
         horizontal_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=text.xview)
@@ -306,18 +383,20 @@ class PreviewFrame(ttk.LabelFrame):
         self._full_highlighter.highlight()
 
     def get_full_text(self) -> str:
-        return self.full_text.get("1.0", tk.END).rstrip()
+        return self.full_text.get("1.0", "end-1c")
 
     def set_full_label(self, label: str):
         self.full_file_frame.configure(text=f"完整 .zs 文件: {label}")
 
     def set_source_label(self, label: str):
-        self.generated_frame.configure(text=f"保存内容 / {label}")
+        self.generated_frame.configure(text=f"生成预览 / {label}")
 
     def set_text(self, value: str):
+        self.generated_text.configure(state=tk.NORMAL)
         self.generated_text.delete("1.0", tk.END)
         self.generated_text.insert(tk.END, value)
         self._generated_highlighter.highlight()
+        self.generated_text.configure(state=tk.DISABLED)
 
     def get_text(self) -> str:
         return self.generated_text.get("1.0", tk.END).rstrip()

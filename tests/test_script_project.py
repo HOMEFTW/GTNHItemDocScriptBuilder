@@ -33,10 +33,10 @@ class ScriptProjectTest(unittest.TestCase):
         )
 
     def test_default_window_geometry_prioritizes_wide_editor(self):
-        self.assertEqual("1500x1080", DEFAULT_WINDOW_GEOMETRY)
+        self.assertEqual("1440x900", DEFAULT_WINDOW_GEOMETRY)
         self.assertEqual("1500x1080", normalize_window_geometry("1500x1080"))
-        self.assertEqual("1500x1040+10+20", normalize_window_geometry("1200x600+10+20"))
-        self.assertEqual("1500x1040", normalize_window_geometry("1700x900"))
+        self.assertEqual("1200x700+10+20", normalize_window_geometry("1200x600+10+20"))
+        self.assertEqual("1700x900", normalize_window_geometry("1700x900"))
 
     def test_saved_overwide_geometry_is_normalized_on_load(self):
         path = self.output_dir / "config.json"
@@ -44,7 +44,7 @@ class ScriptProjectTest(unittest.TestCase):
 
         loaded = AppConfig.load(path)
 
-        self.assertEqual("1500x1040", loaded.window_geometry)
+        self.assertEqual("1700x860", loaded.window_geometry)
 
     def test_save_script_creates_parent_directory(self):
         target = self.output_dir / "scripts" / "generated.zs"

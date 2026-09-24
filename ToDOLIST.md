@@ -2,7 +2,7 @@
 
 ## 下一步优先事项
 
-- [ ] Keep the current GUI three-pane ratio as the first UI priority: left search `580px`, right preview `400px`, center editor gets the remaining space.
+- [x] 升级至 GTNH 2.9.0-beta-3 目标基线，重构为可调整的 IDE 工作区并加入文件安全流程。
 - [ ] Add RA2 optional fields from the wiki and real scripts: `.noOptimize()`.
 
 ## 来自 `D:\Code\ZZZ-NxerCustoms.zs` 的记录

@@ -23,8 +23,8 @@ class MainWindowLayoutTest(unittest.TestCase):
         self.assertGreaterEqual(EDITOR_PANE_WEIGHT, 4)
         self.assertLess(SEARCH_PANE_WEIGHT, EDITOR_PANE_WEIGHT)
         self.assertLess(PREVIEW_PANE_WEIGHT, EDITOR_PANE_WEIGHT)
-        self.assertEqual(580, SEARCH_PANE_WIDTH)
-        self.assertLessEqual(PREVIEW_PANE_WIDTH, 420)
+        self.assertEqual(340, SEARCH_PANE_WIDTH)
+        self.assertGreaterEqual(PREVIEW_PANE_WIDTH, 700)
 
     def test_editor_pane_has_vertical_scrollbar(self):
         original_loader = MainWindow._try_load_default_index
@@ -42,8 +42,8 @@ class MainWindowLayoutTest(unittest.TestCase):
                 window.root.destroy()
 
     def test_minimum_window_is_wide_enough_for_editor_controls(self):
-        self.assertEqual(1400, MIN_WINDOW_SIZE[0])
-        self.assertGreaterEqual(MIN_WINDOW_SIZE[1], 1040)
+        self.assertEqual(1000, MIN_WINDOW_SIZE[0])
+        self.assertEqual(700, MIN_WINDOW_SIZE[1])
 
     def test_top_lists_keep_fixed_height_when_window_gets_taller(self):
         original_loader = MainWindow._try_load_default_index
@@ -54,7 +54,7 @@ class MainWindowLayoutTest(unittest.TestCase):
 
             self.assertEqual(4, int(window.recipe_match_tree.cget("height")))
             self.assertEqual(3, int(window.saved_draft_tree.cget("height")))
-            self.assertGreaterEqual(window.root.winfo_height(), 1040)
+            self.assertGreaterEqual(window.root.winfo_height(), 700)
         finally:
             MainWindow._try_load_default_index = original_loader
             if "window" in locals():
@@ -102,7 +102,7 @@ class MainWindowLayoutTest(unittest.TestCase):
             ]
 
             self.assertIn("GTNHItemDocScriptBuilder", label_texts)
-            self.assertIn("版本 1.0.0", label_texts)
+            self.assertIn("版本 1.2.0", label_texts)
             self.assertIn("工作室 Andgatech", label_texts)
             self.assertIn("© 2026", label_texts)
         finally:
@@ -827,7 +827,7 @@ class MainWindowLayoutTest(unittest.TestCase):
             self.assertEqual("选择 item_index.json", window.choose_index_button.cget("text"))
             self.assertEqual("pack", window.toolbar_top.winfo_manager())
             self.assertEqual("pack", window.toolbar_bottom.winfo_manager())
-            self.assertEqual(window.toolbar_top, window.choose_index_button.master)
+            self.assertNotEqual(window.toolbar_top, window.choose_index_button.master)
             self.assertEqual(window.toolbar_bottom, window.undo_button.master)
             self.assertEqual("解析到GUI", window.parse_button.cget("text"))
             self.assertGreaterEqual(int(window.parse_button.cget("width")), 10)
@@ -864,35 +864,18 @@ class MainWindowLayoutTest(unittest.TestCase):
             if "window" in locals():
                 window.root.destroy()
 
-    def test_new_script_file_creates_file_and_binds_save_path(self):
-        original_loader = MainWindow._try_load_default_index
-        original_choose = main_window_module.choose_script_file
-        original_show_info = main_window_module.show_info
-        MainWindow._try_load_default_index = lambda _self: None
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                target = Path(temp_dir) / "new_recipes.zs"
-                main_window_module.choose_script_file = lambda _parent, _initial_dir="": str(target)
-                main_window_module.show_info = lambda _title, _message: None
-                window = MainWindow()
-                window.preview.set_full_text("old text")
-
-                self.assertEqual("新建 .zs", window.new_script_button.cget("text"))
-                self.assertEqual("保存", window.save_button.cget("text"))
-                self.assertEqual("另存为", window.save_as_button.cget("text"))
+    def test_new_script_starts_unsaved_without_creating_file(self):
+        from unittest.mock import patch
+        with patch.object(MainWindow, "_try_load_default_index"), patch.object(
+            main_window_module, "choose_script_file", side_effect=AssertionError("新建不应弹出保存对话框")
+        ):
+            window = MainWindow()
+            try:
                 window._new_script()
-
-                self.assertTrue(target.exists())
-                self.assertEqual("", target.read_text(encoding="utf-8"))
-                self.assertEqual(target, window.current_script_path)
+                self.assertIsNone(window.current_script_path)
                 self.assertEqual("", window.preview.get_full_text())
-                self.assertIn("new_recipes.zs", window.current_script_path_var.get())
-                self.assertIn("new_recipes.zs", window.preview.full_file_frame.cget("text"))
-        finally:
-            MainWindow._try_load_default_index = original_loader
-            main_window_module.choose_script_file = original_choose
-            main_window_module.show_info = original_show_info
-            if "window" in locals():
+                self.assertFalse(window._document_is_dirty())
+            finally:
                 window.root.destroy()
 
     def test_save_uses_current_script_path_after_import_without_save_dialog(self):

@@ -2,7 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox
 
 from core.fluid_index import FluidEntry, FluidIndexStore, default_fluid_index_path
 from core.item_index import ItemEntry, ItemIndexStore
@@ -46,10 +46,10 @@ from gui.widgets import (
 )
 
 
-MIN_WINDOW_SIZE = (1400, 1040)
-# UI priority: preserve this three-pane balance before adding new controls.
-SEARCH_PANE_WIDTH = 580
-PREVIEW_PANE_WIDTH = 400
+MIN_WINDOW_SIZE = (1000, 700)
+# Resizable IDE workspace: resource sidebar and a primary tabbed editor.
+SEARCH_PANE_WIDTH = 340
+PREVIEW_PANE_WIDTH = 800
 SEARCH_PANE_WEIGHT = 0
 EDITOR_PANE_WEIGHT = 6
 PREVIEW_PANE_WEIGHT = 0
@@ -68,6 +68,10 @@ class MainWindow:
         self.config = AppConfig.load(self.config_path)
         self.root.geometry(self.config.window_geometry)
         self.root.minsize(*MIN_WINDOW_SIZE)
+        self.root.update_idletasks()
+        width = min(self.root.winfo_width(), self.root.winfo_screenwidth() - 80)
+        height = min(self.root.winfo_height(), self.root.winfo_screenheight() - 120)
+        self.root.geometry(f"{width}x{height}")
         self.store: ItemIndexStore | None = None
         self.fluid_store: FluidIndexStore | None = None
         self.ore_dictionary_store: OreDictionaryIndexStore | None = None
@@ -103,9 +107,14 @@ class MainWindow:
         self.current_parse_start_offset: int | None = None
         self.current_parse_end_offset: int | None = None
         self.recipe_matches: list[ParsedRecipe] = []
+        self._outline_all_kinds = False
+        self._outline_script_text = ""
+        self._parsed_script_text = None
         self.saved_drafts: list[RecipeDraft] = []
         self.add_position_var = tk.StringVar(value="文件末尾")
         self.current_script_path: Path | None = None
+        self._saved_script_text = ""
+        self.workspace_path: Path | None = None
         self.current_script_path_var = tk.StringVar(value="当前文件: 未命名")
         self.no_fluid_inputs = tk.BooleanVar(value=False)
         self.no_fluid_outputs = tk.BooleanVar(value=False)
@@ -128,6 +137,9 @@ class MainWindow:
         self.selected_item_suffix.trace_add("write", lambda *_: self._apply_selected_item_options())
         self.output_chance_var.trace_add("write", lambda *_: self._apply_selected_output_chance())
         self._create_widgets()
+        self.preview.full_text.bind("<<Modified>>", lambda _event: self._update_document_state(), add="+")
+        self.preview.full_text.bind("<KeyRelease>", lambda _event: self._update_document_state(), add="+")
+        self.preview.full_text.bind("<ButtonRelease-1>", lambda _event: self._update_document_state(), add="+")
         self._bind_shortcuts()
         self._attach_tooltips()
         self._try_load_default_index()
@@ -137,18 +149,19 @@ class MainWindow:
         self.root.mainloop()
 
     def _bind_shortcuts(self):
+        self.root.bind("<Control-n>", lambda _e: self._new_script())
+        self.root.bind("<Control-o>", lambda _e: self._import_script())
         self.root.bind("<Control-s>", self._shortcut_save)
         self.root.bind("<Control-S>", self._shortcut_save_as)
         self.root.bind("<Control-z>", self._shortcut_undo)
         self.root.bind("<Control-y>", self._shortcut_redo)
         self.root.bind("<Control-g>", lambda _e: self._add_generated_to_script())
-        self.root.bind("<Control-d>", lambda _e: self._save_current_draft_to_list())
-        self.root.bind("<Control-Left>", lambda _e: self._parse_previous_recipe())
-        self.root.bind("<Control-Right>", lambda _e: self._parse_next_recipe())
+        self.root.bind("<Control-Shift-D>", lambda _e: self._save_current_draft_to_list())
+        self.root.bind("<Alt-Left>", lambda _e: self._parse_previous_recipe())
+        self.root.bind("<Alt-Right>", lambda _e: self._parse_next_recipe())
+        self.preview.full_text.bind("<Control-f>", lambda _e: self.preview.show_find())
 
     def _shortcut_save(self, event):
-        if isinstance(event.widget, (tk.Text, ttk.Entry, tk.Entry)):
-            return
         self._save_script()
         return "break"
 
@@ -172,11 +185,11 @@ class MainWindow:
         ToolTip(self.choose_index_button, "选择物品索引文件")
         ToolTip(self.new_script_button, "新建空白 .zs 脚本")
         ToolTip(self.import_button, "导入已有 .zs 脚本")
-        ToolTip(self.parse_button, "按当前脚本类型解析到 GUI")
+        ToolTip(self.parse_button, "识别光标附近的配方并打开配方设计")
         ToolTip(self.disable_parse_button, "关闭解析模式")
         ToolTip(self.first_recipe_button, "跳到第一条配方")
-        ToolTip(self.previous_recipe_button, "上一条配方 (Ctrl+←)")
-        ToolTip(self.next_recipe_button, "下一条配方 (Ctrl+→)")
+        ToolTip(self.previous_recipe_button, "上一条配方 (Alt+←)")
+        ToolTip(self.next_recipe_button, "下一条配方 (Alt+→)")
         ToolTip(self.last_recipe_button, "跳到最后一条配方")
         ToolTip(self.add_to_script_button, "添加当前草稿到脚本 (Ctrl+G)")
         ToolTip(self.replace_recipe_button, "用当前草稿替换已解析的原配方")
@@ -189,7 +202,7 @@ class MainWindow:
         ToolTip(self.copy_preview_button, "复制当前草稿到剪贴板")
         ToolTip(self.clear_slots_button, "清空当前配方格")
         ToolTip(self.ore_dictionary_button, "从矿物字典搜索并填入选中输入格")
-        ToolTip(self.save_draft_button, "保存当前草稿到列表 (Ctrl+D)")
+        ToolTip(self.save_draft_button, "保存当前草稿到列表 (Ctrl+Shift+D)")
         ToolTip(self.load_draft_button, "载入选中的草稿")
         ToolTip(self.delete_draft_button, "删除选中的草稿")
         ToolTip(self.add_all_drafts_button, "将所有草稿追加到完整脚本")
@@ -202,7 +215,20 @@ class MainWindow:
             style.theme_use("clam")
         except tk.TclError:
             pass
-        style.configure(".", background="#f3f4f6", foreground="#111111")
+        style.configure(".", background="#f3f4f6", foreground="#243247", font=("Microsoft YaHei UI", 9))
+        style.configure("Title.TLabel", font=("Segoe UI", 12, "bold"), foreground="#185abd")
+        style.configure("Muted.TLabel", foreground="#68778d")
+        style.configure("Status.TFrame", background="#e7edf6")
+        style.configure("Status.TLabel", background="#e7edf6", foreground="#435773")
+        style.configure("TNotebook", borderwidth=0, tabmargins=(0, 4, 0, 0))
+        style.configure("TNotebook.Tab", padding=(16, 8))
+        style.map("TNotebook.Tab", background=[("selected", "#ffffff")], foreground=[("selected", "#185abd")])
+        style.configure("TButton", padding=(8, 5), relief="flat")
+        style.configure("Accent.TButton", background="#185abd", foreground="#ffffff", padding=(10, 5))
+        style.map("Accent.TButton", background=[("active", "#134b9e")])
+        style.configure("Treeview", rowheight=28, borderwidth=0)
+        style.map("Treeview", background=[("selected", "#dbeafe")], foreground=[("selected", "#153e75")])
+        style.configure("TPanedwindow", background="#dce3ec")
         style.configure("TFrame", background="#f3f4f6")
         style.configure("TLabelframe", background="#f3f4f6", foreground="#111111")
         style.configure("TLabelframe.Label", background="#f3f4f6", foreground="#111111")
@@ -226,85 +252,198 @@ class MainWindow:
             return False
 
     def _create_widgets(self):
+        self._create_menu()
         main = ttk.Frame(self.root, padding=8)
         main.pack(fill=tk.BOTH, expand=True)
-
-        toolbar = ttk.Frame(main)
-        toolbar.pack(fill=tk.X)
-        self.toolbar_top = ttk.Frame(toolbar)
-        self.toolbar_top.pack(fill=tk.X)
-        self.toolbar_bottom = ttk.Frame(toolbar)
-        self.toolbar_bottom.pack(fill=tk.X, pady=(3, 0))
-        self.choose_index_button = self._toolbar_button(
-            self.toolbar_top,
-            "选择 item_index.json",
-            self._choose_index,
-        )
+        self.toolbar_top = ttk.Frame(main)
+        self.toolbar_top.pack(fill=tk.X, pady=(0, 8))
+        ttk.Label(self.toolbar_top, text="SCRIPT STUDIO", style="Title.TLabel").pack(side=tk.LEFT, padx=(4, 20))
         self.new_script_button = self._toolbar_button(self.toolbar_top, "新建 .zs", self._new_script)
-        self.import_button = self._toolbar_button(self.toolbar_top, "导入 .zs", self._import_script)
-        self._toolbar_separator(self.toolbar_top)
-        self.parse_button = self._toolbar_button(self.toolbar_top, "解析到GUI", self._parse_current_script_to_gui)
-        self.disable_parse_button = self._toolbar_button(self.toolbar_top, "关闭解析", self._disable_parse_mode)
-        self._toolbar_separator(self.toolbar_top)
-        self.first_recipe_button = self._toolbar_button(self.toolbar_top, "第一条", self._parse_first_recipe)
-        self.previous_recipe_button = self._toolbar_button(self.toolbar_top, "上一条", self._parse_previous_recipe)
-        self.next_recipe_button = self._toolbar_button(self.toolbar_top, "下一条", self._parse_next_recipe)
-        self.last_recipe_button = self._toolbar_button(self.toolbar_top, "最后一条", self._parse_last_recipe)
-        self._toolbar_separator(self.toolbar_top)
-        self.add_to_script_button = self._toolbar_button(self.toolbar_top, "添加到脚本", self._add_generated_to_script)
-        self.replace_recipe_button = self._toolbar_button(self.toolbar_top, "替换原配方", self._replace_current_recipe)
-        self._toolbar_separator(self.toolbar_top)
+        self.import_button = self._toolbar_button(self.toolbar_top, "打开 .zs", self._import_script)
         self.save_button = self._toolbar_button(self.toolbar_top, "保存", self._save_script)
         self.save_as_button = self._toolbar_button(self.toolbar_top, "另存为", self._save_script_as)
         self.about_button = self._toolbar_button(self.toolbar_top, "关于", self._show_about, side=tk.RIGHT)
+        ttk.Label(self.toolbar_top, text="GTNH 2.9.0-beta-3", style="Muted.TLabel").pack(side=tk.RIGHT, padx=12)
+
+        status = ttk.Frame(main, style="Status.TFrame", padding=(8, 4))
+        status.pack(side=tk.BOTTOM, fill=tk.X)
+        self.cursor_var = tk.StringVar(value="行 1 · 列 1   |   UTF-8 · ZenScript")
+        ttk.Label(status, textvariable=self.cursor_var, style="Status.TLabel").pack(side=tk.RIGHT)
+        ttk.Label(status, textvariable=self.status_var, style="Status.TLabel", width=70, anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.workspace_panes = ttk.PanedWindow(main, orient=tk.HORIZONTAL)
+        self.workspace_panes.pack(fill=tk.BOTH, expand=True)
+        sidebar = ttk.Notebook(self.workspace_panes, width=SEARCH_PANE_WIDTH)
+        self.sidebar = sidebar
+        self.workspace_panes.add(sidebar, weight=0)
+        project = ttk.Frame(sidebar, padding=6)
+        sidebar.add(project, text="脚本目录")
+        project_actions = ttk.Frame(project)
+        project_actions.pack(fill=tk.X, pady=(0, 6))
+        self._toolbar_button(project_actions, "打开文件夹", self._open_workspace)
+        self._toolbar_button(project_actions, "刷新", self._refresh_workspace)
+        self.project_label = ttk.Label(project, text="打开 scripts 文件夹开始工作", style="Muted.TLabel", wraplength=290)
+        self.project_label.pack(fill=tk.X, pady=(0, 8))
+        self.project_tree = ttk.Treeview(project, show="tree", selectmode="browse")
+        project_scroll = ttk.Scrollbar(project, command=self.project_tree.yview)
+        self.project_tree.configure(yscrollcommand=project_scroll.set)
+        project_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.project_tree.pack(fill=tk.BOTH, expand=True)
+        self.project_tree.bind("<Double-Button-1>", lambda _e: self._open_project_selection())
+        self.project_tree.bind("<Return>", lambda _e: self._open_project_selection())
+        resources = ttk.Frame(sidebar, padding=6)
+        sidebar.add(resources, text="物品索引")
+        resource_actions = ttk.Frame(resources)
+        resource_actions.pack(fill=tk.X, pady=(0, 6))
+        self.choose_index_button = self._toolbar_button(resource_actions, "选择 item_index.json", self._choose_index)
+        self.search_frame = ItemSearchFrame(resources, self._search, self._pick_item)
+        self.search_frame.configure(width=SEARCH_PANE_WIDTH)
+        self.search_frame.pack(fill=tk.BOTH, expand=True)
+        self.search_frame.pack_propagate(False)
+        ttk.Label(resources, text="在配方设计中选中格子，再双击物品填入。", style="Muted.TLabel", wraplength=300).pack(fill=tk.X, pady=6)
+
+        self.center_panes = ttk.PanedWindow(self.workspace_panes, orient=tk.VERTICAL)
+        self.workspace_panes.add(self.center_panes, weight=EDITOR_PANE_WEIGHT)
+        self.workspace_tabs = ttk.Notebook(self.center_panes)
+        self.center_panes.add(self.workspace_tabs, weight=5)
+        script_page = ttk.Frame(self.workspace_tabs)
+        self.script_page = script_page
+        self.workspace_tabs.add(script_page, text="未命名 .zs")
+        design = ttk.Frame(self.workspace_tabs, padding=6)
+        self.design_page = design
+        self.workspace_tabs.add(design, text="配方设计")
+        design_body = ttk.PanedWindow(design, orient=tk.VERTICAL)
+        self.design_panes = design_body
+        self._design_sized = False
+        design_body.bind("<Configure>", self._size_design_preview)
+        self.toolbar_bottom = ttk.Frame(script_page, padding=(4, 4))
+        self.toolbar_bottom.pack(fill=tk.X)
         self.undo_button = self._toolbar_button(self.toolbar_bottom, "撤销", self._undo_full_script)
         self.redo_button = self._toolbar_button(self.toolbar_bottom, "重做", self._redo_full_script)
-        self._toolbar_separator(self.toolbar_bottom)
-        self.refresh_preview_button = self._toolbar_button(self.toolbar_bottom, "刷新预览", self._refresh_preview)
-        self.copy_preview_button = self._toolbar_button(self.toolbar_bottom, "复制预览", self._copy_preview)
-        self._toolbar_separator(self.toolbar_bottom)
-        self.clear_slots_button = self._toolbar_button(self.toolbar_bottom, "清空格子", self._clear_slots)
-        self.ore_dictionary_button = self._toolbar_button(self.toolbar_bottom, "填入 OreDict", self._choose_ore_dictionary)
-        self._set_ore_dictionary_search_enabled(False)
-        self._toolbar_separator(self.toolbar_bottom)
-        self.add_position_label_widget = ttk.Label(self.toolbar_bottom, text="添加位置:")
-        self.add_position_label_widget.pack(side=tk.LEFT, padx=(8, 2))
-        self.add_position_combo = ttk.Combobox(
-            self.toolbar_bottom,
-            textvariable=self.add_position_var,
-            values=("文件末尾", "当前光标", "当前配方后"),
-            state="readonly",
-            width=10,
-        )
-        self.add_position_combo.pack(side=tk.LEFT, padx=2)
-        ttk.Label(self.toolbar_bottom, textvariable=self.current_script_path_var, width=48, anchor=tk.W).pack(
-            side=tk.RIGHT,
-            padx=(8, 0),
-        )
-        ttk.Label(self.toolbar_bottom, textvariable=self.status_var).pack(side=tk.RIGHT)
-
-        self._create_recipe_match_list(main)
-        self._create_saved_draft_list(main)
-
-        panes = ttk.PanedWindow(main, orient=tk.HORIZONTAL)
-        panes.pack(fill=tk.BOTH, expand=True, pady=6)
-
-        self.search_frame = ItemSearchFrame(panes, self._search, self._pick_item)
-        self.search_frame.configure(width=SEARCH_PANE_WIDTH)
-        self.search_frame.pack_propagate(False)
-        panes.add(self.search_frame, weight=SEARCH_PANE_WEIGHT)
-
-        editor = ttk.Frame(panes)
-        panes.add(editor, weight=EDITOR_PANE_WEIGHT)
-        self._create_scrollable_editor(editor)
-
-        self.preview = PreviewFrame(panes)
+        self._toolbar_button(self.toolbar_bottom, "查找", lambda: self.preview.show_find())
+        self.parse_button = self._toolbar_button(self.toolbar_bottom, "解析到GUI", self._edit_recipe_at_cursor)
+        ttk.Label(script_page, textvariable=self.current_script_path_var, style="Muted.TLabel", anchor=tk.W).pack(fill=tk.X, padx=10, pady=(0, 4))
+        self.preview = PreviewFrame(script_page, generated_parent=design_body)
         self.preview.set_icon_path(self.app_icon_path)
+        self.preview.save_document = self._save_script
         self.preview.configure(width=PREVIEW_PANE_WIDTH)
-        self.preview.pack_propagate(False)
+        self.preview.pack(fill=tk.BOTH, expand=True)
         self.preview.grid_propagate(False)
-        panes.add(self.preview, weight=PREVIEW_PANE_WEIGHT)
+
+        design_actions = ttk.Frame(design)
+        design_actions.pack(fill=tk.X, pady=(0, 6))
+        self.add_to_script_button = self._toolbar_button(design_actions, "添加到脚本", self._add_generated_to_script)
+        self.add_to_script_button.configure(style="Accent.TButton")
+        self.replace_recipe_button = self._toolbar_button(design_actions, "替换原配方", self._replace_current_recipe)
+        self.add_position_label_widget = ttk.Label(design_actions, text="添加位置:")
+        self.add_position_label_widget.pack(side=tk.LEFT, padx=(12, 4))
+        self.add_position_combo = ttk.Combobox(design_actions, textvariable=self.add_position_var,
+                                             values=("文件末尾", "当前光标", "当前配方后"), state="readonly", width=12)
+        self.add_position_combo.pack(side=tk.LEFT)
+        design_tools = ttk.Frame(design)
+        design_tools.pack(fill=tk.X, pady=(0, 6))
+        self.clear_slots_button = self._toolbar_button(design_tools, "清空格子", self._clear_slots)
+        self.ore_dictionary_button = self._toolbar_button(design_tools, "填入 OreDict", self._choose_ore_dictionary)
+        self._set_ore_dictionary_search_enabled(False)
+        self.refresh_preview_button = self._toolbar_button(design_tools, "刷新预览", self._refresh_preview)
+        self.copy_preview_button = self._toolbar_button(design_tools, "复制预览", self._copy_preview)
+        self.disable_parse_button = self._toolbar_button(design_tools, "关闭解析", self._disable_parse_mode)
+        self._toolbar_button(design_tools, "按类型解析", self._parse_current_script_to_gui)
+        design_body.pack(fill=tk.BOTH, expand=True)
+        editor = ttk.Frame(design_body, width=620)
+        design_body.add(editor, weight=3)
+        self._create_scrollable_editor(editor)
+        # The generated preview belongs to the recipe workflow, beside its controls.
+        self.preview.generated_frame.grid_forget()
+        design_body.add(self.preview.generated_frame, weight=1)
+
+        self.bottom_tabs = ttk.Notebook(self.center_panes, height=170)
+        self.center_panes.add(self.bottom_tabs, weight=1)
+        outline = ttk.Frame(self.bottom_tabs)
+        drafts = ttk.Frame(self.bottom_tabs)
+        self.bottom_tabs.add(outline, text="配方导航")
+        self.bottom_tabs.add(drafts, text="草稿暂存")
+        navigation = ttk.Frame(outline, padding=3)
+        navigation.pack(fill=tk.X)
+        self.first_recipe_button = self._toolbar_button(navigation, "第一条", self._parse_first_recipe)
+        self.previous_recipe_button = self._toolbar_button(navigation, "上一条", self._parse_previous_recipe)
+        self.next_recipe_button = self._toolbar_button(navigation, "下一条", self._parse_next_recipe)
+        self.last_recipe_button = self._toolbar_button(navigation, "最后一条", self._parse_last_recipe)
+        self._create_recipe_match_list(outline)
+        self._create_saved_draft_list(drafts)
+        self.workspace_tabs.bind("<<NotebookTabChanged>>", self._on_workspace_tab_changed)
         self._refresh_preview()
+        self.root.update_idletasks()
+        self._initial_panes()
+
+    def _initial_panes(self):
+        self.workspace_panes.sashpos(0, SEARCH_PANE_WIDTH)
+        self.center_panes.sashpos(0, max(360, self.center_panes.winfo_height() - 170))
+
+    def _size_design_preview(self, event):
+        if event.height > 100:
+            position = event.height - min(170, event.height // 2)
+            if not self._design_sized or self.design_panes.sashpos(0) > position:
+                self.design_panes.sashpos(0, position)
+            self._design_sized = True
+
+    def _on_workspace_tab_changed(self, _event=None):
+        if self.workspace_tabs.select() == str(self.design_page):
+            self.sidebar.select(1)
+
+    def _create_menu(self):
+        menu = tk.Menu(self.root)
+        file_menu = tk.Menu(menu, tearoff=False)
+        for label, shortcut, command in (
+            ("新建脚本", "Ctrl+N", self._new_script),
+            ("打开脚本…", "Ctrl+O", self._import_script),
+            ("打开文件夹…", "", self._open_workspace),
+            ("保存", "Ctrl+S", self._save_script),
+            ("另存为…", "Ctrl+Shift+S", self._save_script_as),
+        ):
+            file_menu.add_command(label=label, accelerator=shortcut, command=command)
+        file_menu.add_separator()
+        file_menu.add_command(label="退出", command=self._on_close)
+        menu.add_cascade(label="文件", menu=file_menu)
+        view = tk.Menu(menu, tearoff=False)
+        view.add_command(label="脚本编辑", command=lambda: self.workspace_tabs.select(self.script_page))
+        view.add_command(label="配方设计", command=lambda: self.workspace_tabs.select(self.design_page))
+        view.add_command(label="恢复面板布局", command=self._initial_panes)
+        menu.add_cascade(label="视图", menu=view)
+        self.root.configure(menu=menu)
+
+    def _open_workspace(self):
+        path = filedialog.askdirectory(parent=self.root, title="打开脚本文件夹", initialdir=self.config.script_output_dir)
+        if path:
+            self.workspace_path = Path(path)
+            self._refresh_workspace()
+            self.sidebar.select(0)
+
+    def _refresh_workspace(self):
+        if self.workspace_path is None:
+            return
+        self.project_tree.delete(*self.project_tree.get_children())
+        self.project_label.configure(text=str(self.workspace_path))
+        try:
+            folders = {self.workspace_path: ""}
+            for path in sorted(self.workspace_path.rglob("*.zs")):
+                parent = self.workspace_path
+                for part in path.relative_to(self.workspace_path).parts[:-1]:
+                    folder = parent / part
+                    if folder not in folders:
+                        folders[folder] = self.project_tree.insert(folders[parent], tk.END, text=part, open=True)
+                    parent = folder
+                self.project_tree.insert(folders[parent], tk.END, text=path.name, values=(str(path),))
+        except OSError as exc:
+            self.status_var.set(f"无法读取脚本目录: {exc}")
+
+    def _open_project_selection(self):
+        selection = self.project_tree.selection()
+        if not selection:
+            return
+        values = self.project_tree.item(selection[0], "values")
+        if values:
+            self._open_script_path(Path(values[0]))
 
     def _toolbar_button(self, parent, text: str, command, side=tk.LEFT):
         button = ttk.Button(
@@ -326,7 +465,7 @@ class MainWindow:
 
     def _create_recipe_match_list(self, parent):
         self.recipe_matches_frame = ttk.LabelFrame(parent, text="配方列表", padding=5)
-        self.recipe_matches_frame.pack(fill=tk.X, pady=(6, 0))
+        self.recipe_matches_frame.pack(fill=tk.BOTH, expand=True)
         columns = ("index", "line", "kind", "summary")
         self.recipe_match_tree = ttk.Treeview(self.recipe_matches_frame, columns=columns, show="headings", height=4)
         headings = {
@@ -335,7 +474,7 @@ class MainWindow:
             "kind": "类型",
             "summary": "摘要",
         }
-        widths = {"index": 75, "line": 55, "kind": 120, "summary": 980}
+        widths = {"index": 75, "line": 55, "kind": 120, "summary": 420}
         for key in columns:
             self.recipe_match_tree.heading(key, text=headings[key])
             self.recipe_match_tree.column(key, width=widths[key], anchor=tk.W)
@@ -351,7 +490,7 @@ class MainWindow:
 
     def _create_saved_draft_list(self, parent):
         self.saved_drafts_frame = ttk.LabelFrame(parent, text="草稿列表", padding=5)
-        self.saved_drafts_frame.pack(fill=tk.X, pady=(6, 0))
+        self.saved_drafts_frame.pack(fill=tk.BOTH, expand=True)
 
         buttons = ttk.Frame(self.saved_drafts_frame)
         buttons.grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 4))
@@ -366,7 +505,7 @@ class MainWindow:
         columns = ("index", "kind", "summary")
         self.saved_draft_tree = ttk.Treeview(self.saved_drafts_frame, columns=columns, show="headings", height=3)
         headings = {"index": "序号", "kind": "类型", "summary": "摘要"}
-        widths = {"index": 55, "kind": 120, "summary": 1090}
+        widths = {"index": 55, "kind": 120, "summary": 420}
         for key in columns:
             self.saved_draft_tree.heading(key, text=headings[key])
             self.saved_draft_tree.column(key, width=widths[key], anchor=tk.W)
@@ -406,6 +545,13 @@ class MainWindow:
             lambda event: self.editor_canvas.itemconfigure(self.editor_window, width=event.width),
         )
         self._create_editor(self.editor_content)
+        self.root.bind("<MouseWheel>", self._scroll_recipe_editor, add="+")
+
+    def _scroll_recipe_editor(self, event):
+        if str(event.widget).startswith(str(self.editor_content)) or event.widget == self.editor_canvas:
+            if not isinstance(event.widget, (tk.Text, ttk.Combobox)):
+                self.editor_canvas.yview_scroll(-int(event.delta / 120), "units")
+                return "break"
 
     def _create_editor(self, parent):
         mode = ttk.LabelFrame(parent, text="脚本类型", padding=5)
@@ -418,14 +564,14 @@ class MainWindow:
             ("删除", "remove"),
             ("GTNH/模组机器", "machine"),
         ]
-        for text, value in modes:
+        for index, (text, value) in enumerate(modes):
             ttk.Radiobutton(
                 mode,
                 text=text,
                 variable=self.recipe_kind,
                 value=value,
                 command=self._on_recipe_kind_selected,
-            ).pack(side=tk.LEFT, padx=(0, 8))
+            ).grid(row=index // 3, column=index % 3, sticky=tk.W, padx=(0, 12), pady=3)
 
         self.slot_area = ttk.Frame(parent)
         self.slot_area.pack(fill=tk.X, pady=4)
@@ -1137,72 +1283,94 @@ class MainWindow:
     def _show_about(self):
         AboutDialog(self.root)
 
+    def _document_is_dirty(self):
+        return self.preview.get_full_text() != self._saved_script_text
+
+    def _update_document_state(self):
+        name = self.current_script_path.name if self.current_script_path else "未命名 .zs"
+        marker = " ●" if self._document_is_dirty() else ""
+        self.workspace_tabs.tab(self.script_page, text=name + marker)
+        self.root.title(f"{name}{marker} — {self.TITLE}")
+        line, column = self.preview.full_text.index(tk.INSERT).split(".")
+        self.cursor_var.set(f"行 {line} · 列 {int(column) + 1}   |   UTF-8 · ZenScript")
+
+    def _confirm_document_change(self):
+        if not self._document_is_dirty():
+            return True
+        decision = messagebox.askyesnocancel("未保存的更改", "保存当前脚本的更改吗？", parent=self.root)
+        if decision is None:
+            return False
+        if decision:
+            return self._save_script()
+        return True
+
     def _new_script(self):
-        path = choose_script_file(self.root, self.config.script_output_dir)
-        if not path:
-            return
-        try:
-            save_script(path, "")
-            self.preview.set_full_text("")
-            self._reset_parse_state()
-            self._set_current_script_path(Path(path))
-            self.config.script_output_dir = str(Path(path).parent)
-            self.current_draft_source = "当前草稿: 新建脚本"
-            self.preview.set_source_label(self.current_draft_source)
-            self._clear_recipe_match_list()
-            self.status_var.set(f"已新建 {Path(path).name}")
-            show_info("新建成功", path)
-        except Exception as exc:
-            show_error("新建失败", str(exc))
+        if not self._confirm_document_change():
+            return "break"
+        self._load_script_text("", "未命名 .zs")
+        self.status_var.set("已新建未命名脚本 · Ctrl+S 保存到文件")
+        self.preview.full_text.focus_set()
+        return "break"
 
     def _save_script(self):
-        self._refresh_preview()
         if self.current_script_path is None:
-            self._save_script_as()
-            return
-        self._write_script_to_path(self.current_script_path, "保存成功")
+            return self._save_script_as()
+        return self._write_script_to_path(self.current_script_path, "保存成功")
 
     def _save_script_as(self):
-        self._refresh_preview()
         path = choose_script_file(self.root, self.config.script_output_dir)
         if not path:
-            return
-        self._write_script_to_path(Path(path), "另存为成功")
+            return False
+        return self._write_script_to_path(Path(path), "另存为成功")
 
     def _write_script_to_path(self, path: Path, success_title: str):
         try:
-            save_script(path, self._save_content())
+            content = self._save_content()
+            save_script(path, content)
+            self._saved_script_text = content
             self._set_current_script_path(Path(path))
             self.config.script_output_dir = str(Path(path).parent)
-            self.status_var.set(f"已保存 {Path(path).name}")
-            show_info(success_title, str(path))
+            self.status_var.set(f"已保存 {path}")
+            self._update_document_state()
+            self._refresh_workspace()
+            return True
         except Exception as exc:
             show_error("保存失败", str(exc))
+            return False
 
     def _save_content(self) -> str:
         return self.preview.get_full_text()
 
     def _import_script(self):
         path = choose_import_script_file(self.root, self.config.script_output_dir)
-        if not path:
+        if path:
+            self._open_script_path(Path(path))
+        return "break"
+
+    def _open_script_path(self, path: Path):
+        if not self._confirm_document_change():
             return
         try:
-            script_text = Path(path).read_text(encoding="utf-8-sig")
-            self._load_script_text(script_text, Path(path).name, Path(path))
-            self.config.script_output_dir = str(Path(path).parent)
-            self.status_var.set(f"已导入 {Path(path).name}，可以继续编辑")
+            script_text = path.read_text(encoding="utf-8-sig")
+            self._load_script_text(script_text, path.name, path)
+            self.config.script_output_dir = str(path.parent)
+            self.status_var.set(f"已打开 {path.name}")
         except Exception as exc:
-            show_error("导入失败", str(exc))
+            show_error("打开失败", str(exc))
 
     def _load_script_text(self, script_text: str, filename: str, path: Path | None = None):
         self._reset_parse_state()
         self.preview.set_full_text(script_text)
+        self._saved_script_text = script_text
+        self.workspace_tabs.select(self.script_page)
+        self._update_document_state()
         self._set_current_script_path(path, filename)
         self.current_draft_source = f"当前草稿: {filename} 未解析"
         self.preview.set_source_label(self.current_draft_source)
-        self._clear_recipe_match_list()
+        self._refresh_recipe_match_list(all_kinds=True)
 
     def _reset_parse_state(self):
+        self._parsed_script_text = None
         self.parse_mode_enabled.set(False)
         self.current_parse_occurrence = 0
         self.current_parse_count = 0
@@ -1212,6 +1380,7 @@ class MainWindow:
 
     def _set_current_script_path(self, path: Path | None, label: str | None = None):
         self.current_script_path = path
+        self._update_document_state()
         if path is None:
             self.current_script_path_var.set("当前文件: 未命名")
             self.preview.set_full_label(label or "未命名 .zs")
@@ -1222,6 +1391,27 @@ class MainWindow:
     def _parse_current_script_to_gui(self):
         self.current_parse_occurrence = 0
         self._parse_script_occurrence(0)
+
+    def _edit_recipe_at_cursor(self):
+        try:
+            matches = parse_zs_script_matches(self.preview.get_full_text())
+            if not matches:
+                self.status_var.set("当前文件没有受支持的配方；可切换到配方设计新建")
+                return
+            cursor = len(self.preview.full_text.get("1.0", tk.INSERT))
+            selected = next((entry for entry in matches if entry.start_offset <= cursor <= entry.end_offset), None)
+            if selected is None:
+                selected = next((entry for entry in matches if entry.start_offset >= cursor), matches[-1])
+            self._edit_parsed_recipe(selected)
+        except ValueError as exc:
+            self.status_var.set(f"无法解析配方: {exc}")
+
+    def _edit_parsed_recipe(self, selected):
+        self.recipe_kind.set(selected.draft.kind)
+        self.remove_mode.set(remove_mode_label(selected.draft.remove_mode))
+        matches = parse_zs_script_matches(self.preview.get_full_text(), self._allowed_parse_kinds())
+        occurrence = next(index for index, entry in enumerate(matches) if entry.start_offset == selected.start_offset)
+        self._parse_script_occurrence(occurrence)
 
     def _parse_script_occurrence(self, occurrence: int):
         try:
@@ -1235,6 +1425,7 @@ class MainWindow:
             self.current_parse_count = parsed.parseable_count
             self.current_parse_start_offset = parsed.start_offset
             self.current_parse_end_offset = parsed.end_offset
+            self._parsed_script_text = self.preview.get_full_text()
             self.current_draft_source = (
                 f"当前草稿: 第 {parsed.parseable_index}/{parsed.parseable_count} 条当前类型，"
                 f"全脚本第 {parsed.recipe_number} 条受支持配方，行 {parsed.line_number} ({parsed.marker})"
@@ -1242,14 +1433,19 @@ class MainWindow:
             self.preview.set_source_label(self.current_draft_source)
             self._load_draft(parsed.draft)
             self.parse_mode_enabled.set(True)
+            self.workspace_tabs.select(self.design_page)
+            self.sidebar.select(1)
             self.status_var.set(self.current_draft_source)
         except Exception as exc:
             show_error("解析失败", str(exc))
 
-    def _refresh_recipe_match_list(self):
+    def _refresh_recipe_match_list(self, all_kinds=False):
+        self._outline_all_kinds = all_kinds
+        self._outline_script_text = self.preview.get_full_text()
         self._clear_recipe_match_list()
         try:
-            self.recipe_matches = parse_zs_script_matches(self.preview.get_full_text(), self._allowed_parse_kinds())
+            self.recipe_matches = parse_zs_script_matches(
+                self.preview.get_full_text(), None if all_kinds else self._allowed_parse_kinds())
         except Exception as exc:
             self.recipe_matches = []
             self.status_var.set(f"配方列表解析失败：{exc}")
@@ -1275,7 +1471,15 @@ class MainWindow:
         selection = self.recipe_match_tree.selection()
         if not selection:
             return
-        self._parse_script_occurrence(int(selection[0]))
+        if self.preview.get_full_text() != self._outline_script_text:
+            self._refresh_recipe_match_list(all_kinds=True)
+            self.status_var.set("脚本已修改，配方导航已刷新，请重新选择配方")
+            return
+        index = int(selection[0])
+        if self._outline_all_kinds:
+            self._edit_parsed_recipe(self.recipe_matches[index])
+        else:
+            self._parse_script_occurrence(index)
 
     def _parse_first_recipe(self):
         self._parse_script_occurrence(0)
@@ -1290,8 +1494,9 @@ class MainWindow:
         self._parse_script_occurrence(-1)
 
     def _disable_parse_mode(self):
-        self.parse_mode_enabled.set(False)
-        self.status_var.set("解析已关闭：切换脚本类型时保留当前草稿")
+        self._reset_parse_state()
+        self._refresh_recipe_match_list(all_kinds=True)
+        self.status_var.set("解析已关闭：当前草稿独立编辑，切换类型将清空配方格")
 
     def _draft_kind_label(self, draft: RecipeDraft) -> str:
         if draft.kind == "machine":
@@ -1392,6 +1597,9 @@ class MainWindow:
         if position == "当前光标":
             self.preview.full_text.insert("insert", generated)
         elif position == "当前配方后" and self.current_parse_end_offset is not None:
+            if self.preview.get_full_text() != self._parsed_script_text:
+                self.status_var.set("脚本已修改，请重新解析配方后再插入")
+                return
             self.preview.full_text.insert(self._full_text_index(self.current_parse_end_offset), "\n\n" + generated)
         else:
             existing = self.preview.get_full_text().rstrip()
@@ -1407,12 +1615,18 @@ class MainWindow:
         if self.current_parse_start_offset is None or self.current_parse_end_offset is None:
             self.status_var.set("没有可替换的已解析配方")
             return
+        if self.preview.get_full_text() != self._parsed_script_text:
+            self.status_var.set("脚本已修改，请重新解析配方后再替换")
+            return
+        self.preview.full_text.edit_separator()
         self.preview.full_text.delete(
             self._full_text_index(self.current_parse_start_offset),
             self._full_text_index(self.current_parse_end_offset),
         )
         self.preview.full_text.insert(self._full_text_index(self.current_parse_start_offset), generated)
         self.current_parse_end_offset = self.current_parse_start_offset + len(generated)
+        self.preview.full_text.edit_separator()
+        self._parsed_script_text = self.preview.get_full_text()
         self._refresh_recipe_match_list()
         self.status_var.set("已替换原配方")
 
@@ -1501,6 +1715,8 @@ class MainWindow:
         self._sync_selected_item_options()
 
     def _on_close(self):
+        if not self._confirm_document_change():
+            return
         self.config.window_geometry = self.root.geometry()
         self.config.last_template = self.template_id.get()
         self.config.last_recipe_map = recipe_map_id_from_label(self.recipe_map.get())

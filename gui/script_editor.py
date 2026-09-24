@@ -146,11 +146,19 @@ class ScriptEditorWindow(tk.Toplevel):
             self._close()
 
     def _save_and_close(self):
-        content = self.editor.get("1.0", tk.END).rstrip()
-        self.on_save(content)
-        self.destroy()
+        content = self.editor.get("1.0", "end-1c")
+        if self.on_save(content) is not False:
+            self._close()
 
     def _close(self):
+        # Flush the latest edit even if the debounce timer has not fired yet.
+        if self._sync_id is not None:
+            self.after_cancel(self._sync_id)
+            self._sync_id = None
+        if self._line_update_id is not None:
+            self.after_cancel(self._line_update_id)
+            self._line_update_id = None
+        self._do_sync()
         if self.on_close:
             self.on_close()
         self.destroy()
@@ -165,7 +173,7 @@ class ScriptEditorWindow(tk.Toplevel):
     def _do_sync(self):
         self._sync_id = None
         if self.on_change:
-            content = self.editor.get("1.0", tk.END).rstrip()
+            content = self.editor.get("1.0", "end-1c")
             cursor_line = int(self.editor.index(tk.INSERT).split(".")[0])
             self.on_change(content, cursor_line)
 
@@ -192,10 +200,8 @@ class ScriptEditorWindow(tk.Toplevel):
         self.line_numbers.yview_moveto(first)
 
     def _on_modified(self, _event):
-        if self.editor.edit_modified():
-            self.editor.edit_modified(False)
-            self._schedule_line_update()
-            self._schedule_sync()
+        self._schedule_line_update()
+        self._schedule_sync()
 
     def _on_key_release(self, _event):
         self._schedule_line_update()

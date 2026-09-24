@@ -99,7 +99,7 @@ class PreviewFrameTest(unittest.TestCase):
 
         self.assertEqual("recipes.remove(<minecraft:dirt>);", frame.get_full_text())
         self.assertIn("完整 .zs 文件", frame.full_file_frame.cget("text"))
-        self.assertIn("保存内容", frame.generated_frame.cget("text"))
+        self.assertIn("生成预览", frame.generated_frame.cget("text"))
         self.assertIn("第 1 条", frame.generated_frame.cget("text"))
         self.assertIn("recipes.addShapeless", frame.get_text())
 
